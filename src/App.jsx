@@ -1389,53 +1389,6 @@ function TournamentTab({isAdmin, setShowLogin}){
         </div>
       </div>
 
-      {/* Painel Campeão */}
-      {bv.gf?.winner && (
-        <div className="relative overflow-hidden rounded-2xl border-2 border-yellow-500/60 bg-gradient-to-br from-zinc-900 via-zinc-900 to-yellow-950/30">
-          {/* Fundo animado */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-yellow-400 blur-3xl"/>
-          </div>
-
-          <div className="relative flex flex-col items-center justify-center py-10 px-6 text-center gap-4">
-            {/* Troféu */}
-            <div className="flex items-center justify-center">
-              <div className="relative">
-                <div className="text-8xl animate-bounce" style={{animationDuration:"2s"}}>🏆</div>
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-black font-black text-xs">1</div>
-              </div>
-            </div>
-
-            {/* Título */}
-            <div>
-              <div className="text-yellow-500/70 font-mono text-xs uppercase tracking-[0.4em] mb-2">Campeão</div>
-              <div className="text-yellow-300 font-black text-4xl tracking-wide uppercase drop-shadow-lg" style={{textShadow:"0 0 40px rgba(234,179,8,0.5)"}}>
-                {bv.gf.winner}
-              </div>
-              <div className="text-yellow-600 font-mono text-xs mt-2 uppercase tracking-wider">{current.name}</div>
-            </div>
-
-            {/* Placar final */}
-            <div className="flex items-center gap-3 mt-1">
-              <div className="px-4 py-2 rounded-xl bg-yellow-500/20 border border-yellow-500/40">
-                <div className="text-yellow-300 font-black text-xl font-mono">{bv.gf.score1} – {bv.gf.score2}</div>
-                <div className="text-yellow-600 text-[10px] font-mono uppercase text-center">Grand Final</div>
-              </div>
-            </div>
-
-            {/* Confetti visual */}
-            <div className="flex gap-2 mt-1">
-              {["🥇","⭐","🎖️","⭐","🥇"].map((e,i)=>(
-                <span key={i} className="text-lg opacity-80">{e}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* Borda brilhante */}
-          <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-60"/>
-          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-60"/>
-        </div>
-      )}
 
       {/* Modal editar partida */}
       {editMatch&&isAdmin&&(
