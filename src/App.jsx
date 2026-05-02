@@ -102,7 +102,9 @@ function PlayersTab({players,setPlayers,loading}){
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
 
   const save=async()=>{
-    if(!form.name.trim())return;
+    if(!form.name.trim()||!form.city.trim()||!form.steamUrl.trim()||!form.gcUrl.trim()||!form.faceitUrl.trim()){
+      alert("Preencha os campos obrigatórios: Nome, Cidade, Steam, GamersCLUB e FACEIT!");return;
+    }
     setSaving(true);
     try{
       if(editing!==null){
@@ -136,15 +138,15 @@ function PlayersTab({players,setPlayers,loading}){
           {editing!==null?"✏ Editar Jogador":"＋ Cadastrar Jogador"}
         </h2>
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <InputF label="Nome / Nick" k="name" ph="ex: s1mple" value={form["name"]} onChange={set}/>
+          <InputF label="Nome / Nick *" k="name" ph="ex: s1mple" value={form["name"]} onChange={set}/>
           <InputF label="Idade" k="age" type="number" ph="21" value={form["age"]} onChange={set}/>
-          <InputF label="Cidade" k="city" ph="São Paulo" value={form["city"]} onChange={set}/>
+          <InputF label="Cidade *" k="city" ph="São Paulo" value={form["city"]} onChange={set}/>
           <InputF label="Telefone" k="phone" ph="(11) 99999-9999" value={form["phone"]} onChange={set}/>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-4">
-          <InputF label="Link Steam" k="steamUrl" ph="steamcommunity.com/id/..." value={form["steamUrl"]} onChange={set}/>
-          <InputF label="Link GamersCLUB" k="gcUrl" ph="gamersclub.com.br/..." value={form["gcUrl"]} onChange={set}/>
-          <InputF label="Link FACEIT" k="faceitUrl" ph="faceit.com/en/players/..." value={form["faceitUrl"]} onChange={set}/>
+          <InputF label="Link Steam *" k="steamUrl" ph="steamcommunity.com/id/..." value={form["steamUrl"]} onChange={set}/>
+          <InputF label="Link GamersCLUB *" k="gcUrl" ph="gamersclub.com.br/..." value={form["gcUrl"]} onChange={set}/>
+          <InputF label="Link FACEIT *" k="faceitUrl" ph="faceit.com/en/players/..." value={form["faceitUrl"]} onChange={set}/>
         </div>
         <div className="border-t border-zinc-800 pt-4 mt-2 mb-4">
           <p className="text-xs text-zinc-500 font-mono uppercase tracking-widest mb-3">Nível & Pontuação</p>
@@ -919,6 +921,133 @@ function HistoryTab({matches,players,loadingMatches}){
   );
 }
 
+
+// ─── ABA: ROSTER (Lista Completa de Jogadores) ───────────────
+function RosterTab({players}){
+  const [search,setSearch]=useState("");
+  const [selected,setSelected]=useState(null);
+  const seeded=assignSeeds(players);
+
+  const filtered=seeded
+    .filter(p=>p.name.toLowerCase().includes(search.toLowerCase())||p.city?.toLowerCase().includes(search.toLowerCase()))
+    .sort((a,b)=>b.score-a.score);
+
+  const sel=selected?seeded.find(p=>p.id===selected):null;
+
+  return(
+    <div className="flex flex-col gap-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-zinc-100 font-black text-xl">Roster Completo</h2>
+          <p className="text-zinc-500 text-xs mt-0.5">{players.length} jogadores cadastrados</p>
+        </div>
+        <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar jogador..."
+          className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500 w-48"/>
+      </div>
+
+      {/* Grid de jogadores */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {filtered.map(p=>{
+          const sc=SEED_COLORS[p.seed]||SEED_COLORS[5];
+          const isOpen=selected===p.id;
+          return(
+            <div key={p.id} className={`bg-zinc-900 border rounded-xl overflow-hidden transition-all cursor-pointer ${isOpen?sc.border+" shadow-lg":"border-zinc-800 hover:border-zinc-700"}`}
+              onClick={()=>setSelected(isOpen?null:p.id)}>
+              {/* Card topo */}
+              <div className="flex items-center gap-3 p-4">
+                {/* Avatar com Seed */}
+                <div className={`w-12 h-12 rounded-xl border-2 flex flex-col items-center justify-center shrink-0 ${sc.border} ${sc.bg}`}>
+                  <span className={`font-black text-sm leading-none ${sc.text}`}>S{p.seed}</span>
+                  <span className="text-zinc-600 text-[9px] font-mono">#{filtered.indexOf(p)+1}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-100 font-bold text-base truncate">{p.name}</span>
+                    {p.age&&<span className="text-zinc-600 text-xs font-mono">{p.age}a</span>}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-zinc-500 text-xs">📍 {p.city||"—"}</span>
+                  </div>
+                  <div className="flex gap-1 mt-1.5 flex-wrap">
+                    {p.gcLevel!==""&&<span className="text-xs font-mono px-1.5 py-0.5 rounded border bg-green-500/20 text-green-400 border-green-500/40">GC {p.gcLevel}</span>}
+                    {p.faceitLevel!==""&&<span className="text-xs font-mono px-1.5 py-0.5 rounded border bg-orange-500/20 text-orange-400 border-orange-500/40">FC {p.faceitLevel}</span>}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className={`font-mono font-black text-xl ${sc.text}`}>{p.score.toFixed(0)}</div>
+                  <div className="text-zinc-600 text-[10px] font-mono">SCORE</div>
+                  <div className="text-zinc-600 text-[10px] mt-1">{isOpen?"▲":"▼"}</div>
+                </div>
+              </div>
+
+              {/* Expandido: links e detalhes */}
+              {isOpen&&(
+                <div className="border-t border-zinc-800 px-4 py-3 bg-zinc-950/50">
+                  <div className="text-zinc-500 font-mono text-xs uppercase mb-3">Perfis & Links</div>
+                  <div className="flex flex-col gap-2">
+                    {p.steamUrl&&(
+                      <a href={p.steamUrl.startsWith("http")?p.steamUrl:"https://"+p.steamUrl}
+                         target="_blank" rel="noopener noreferrer"
+                         onClick={e=>e.stopPropagation()}
+                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/15 transition-colors">
+                        <span className="text-base">🎮</span>
+                        <span className="text-blue-400 font-mono text-xs font-bold flex-1">STEAM</span>
+                        <span className="text-blue-600 text-xs">Abrir perfil ↗</span>
+                      </a>
+                    )}
+                    {p.gcUrl&&(
+                      <a href={p.gcUrl.startsWith("http")?p.gcUrl:"https://"+p.gcUrl}
+                         target="_blank" rel="noopener noreferrer"
+                         onClick={e=>e.stopPropagation()}
+                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-green-500/30 bg-green-500/5 hover:bg-green-500/15 transition-colors">
+                        <span className="text-base">🏆</span>
+                        <span className="text-green-400 font-mono text-xs font-bold flex-1">GAMERSCLUB</span>
+                        {p.gcLevel!==""&&<span className="text-green-600 font-mono text-xs">Level {p.gcLevel}</span>}
+                        <span className="text-green-600 text-xs">↗</span>
+                      </a>
+                    )}
+                    {p.faceitUrl&&(
+                      <a href={p.faceitUrl.startsWith("http")?p.faceitUrl:"https://"+p.faceitUrl}
+                         target="_blank" rel="noopener noreferrer"
+                         onClick={e=>e.stopPropagation()}
+                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/15 transition-colors">
+                        <span className="text-base">⚡</span>
+                        <span className="text-orange-400 font-mono text-xs font-bold flex-1">FACEIT</span>
+                        {p.faceitLevel!==""&&<span className="text-orange-600 font-mono text-xs">Level {p.faceitLevel}</span>}
+                        <span className="text-orange-600 text-xs">↗</span>
+                      </a>
+                    )}
+                    {p.phone&&(
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 bg-zinc-800/30">
+                        <span className="text-base">📱</span>
+                        <span className="text-zinc-400 font-mono text-xs font-bold flex-1">TELEFONE</span>
+                        <span className="text-zinc-400 text-xs">{p.phone}</span>
+                      </div>
+                    )}
+                    {!p.steamUrl&&!p.gcUrl&&!p.faceitUrl&&!p.phone&&(
+                      <div className="text-zinc-600 font-mono text-xs text-center py-2">Nenhum link cadastrado.</div>
+                    )}
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center justify-between">
+                    <div className={`text-xs font-mono ${sc.text}`}>Score: {p.score.toFixed(1)} / 100</div>
+                    <ScoreBar score={p.score}/>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {filtered.length===0&&(
+          <div className="col-span-2 text-center text-zinc-600 font-mono py-16 border border-dashed border-zinc-800 rounded-xl">
+            {players.length===0?"Nenhum jogador cadastrado ainda.":"Nenhum resultado para a busca."}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── APP PRINCIPAL ────────────────────────────────────────────
 export default function App(){
   const [tab,setTab]=useState("players");
@@ -933,7 +1062,8 @@ export default function App(){
   },[]);
 
   const tabs=[
-    {id:"players",label:"👤 Jogadores"},
+    {id:"players",label:"👤 Cadastro"},
+    {id:"roster",label:"📋 Jogadores"},
     {id:"draft",label:"🎯 Draft"},
     {id:"veto",label:"🗺 Veto"},
     {id:"history",label:"📊 Histórico"},
@@ -976,6 +1106,7 @@ export default function App(){
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         {tab==="players"&&<PlayersTab players={players} setPlayers={setPlayers} loading={loadingPlayers}/>}
+        {tab==="roster"&&<RosterTab players={players}/>}
         {tab==="draft"&&<DraftTab players={players} matches={matches} setMatches={setMatches}/>}
         {tab==="veto"&&<VetoTab/>}
         {tab==="history"&&<HistoryTab matches={matches} players={players} loadingMatches={loadingMatches}/>}
