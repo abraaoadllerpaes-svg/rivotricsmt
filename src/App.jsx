@@ -317,16 +317,45 @@ function DraftTab({players,matches,setMatches}){
           {ranked.map(p=>{
             const sc=SEED_COLORS[p.seed]||SEED_COLORS[5];
             return(
-              <label key={p.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${pool.includes(p.id)?"border-orange-500/50 bg-orange-500/5":"border-zinc-800 hover:border-zinc-700"}`}>
-                <input type="checkbox" checked={pool.includes(p.id)} onChange={()=>togglePool(p.id)} className="accent-orange-500"/>
+              <div key={p.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${pool.includes(p.id)?"border-orange-500/50 bg-orange-500/5":"border-zinc-800 hover:border-zinc-700"}`}>
+                <input type="checkbox" checked={pool.includes(p.id)} onChange={()=>togglePool(p.id)} className="accent-orange-500 cursor-pointer"/>
                 <div className={`w-8 h-8 rounded border flex flex-col items-center justify-center shrink-0 text-xs font-bold ${sc.border} ${sc.bg} ${sc.text}`}>S{p.seed}</div>
                 <div className="flex-1"><span className="text-zinc-200 font-bold text-sm">{p.name}</span><span className="text-zinc-500 text-xs ml-2">{p.city}</span></div>
-                <div className="flex gap-1">
-                  {p.gcLevel!==""&&<Badge color="green">GC {p.gcLevel}</Badge>}
-                  {p.faceitLevel!==""&&<Badge color="orange">FC {p.faceitLevel}</Badge>}
+                <div className="flex gap-1 items-center">
+                  {/* GC badge + link */}
+                  {p.gcLevel!==""&&(
+                    p.gcUrl
+                      ? <a href={p.gcUrl.startsWith("http")?p.gcUrl:"https://"+p.gcUrl} target="_blank" rel="noopener noreferrer"
+                          onClick={e=>e.stopPropagation()}
+                          title="Abrir perfil GamersCLUB"
+                          className="flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded border bg-green-500/20 text-green-400 border-green-500/40 hover:bg-green-500/40 transition-colors">
+                          GC {p.gcLevel} <span className="text-[10px]">↗</span>
+                        </a>
+                      : <Badge color="green">GC {p.gcLevel}</Badge>
+                  )}
+                  {/* FC badge + link */}
+                  {p.faceitLevel!==""&&(
+                    p.faceitUrl
+                      ? <a href={p.faceitUrl.startsWith("http")?p.faceitUrl:"https://"+p.faceitUrl} target="_blank" rel="noopener noreferrer"
+                          onClick={e=>e.stopPropagation()}
+                          title="Abrir perfil FACEIT"
+                          className="flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded border bg-orange-500/20 text-orange-400 border-orange-500/40 hover:bg-orange-500/40 transition-colors">
+                          FC {p.faceitLevel} <span className="text-[10px]">↗</span>
+                        </a>
+                      : <Badge color="orange">FC {p.faceitLevel}</Badge>
+                  )}
+                  {/* Steam link */}
+                  {p.steamUrl&&(
+                    <a href={p.steamUrl.startsWith("http")?p.steamUrl:"https://"+p.steamUrl} target="_blank" rel="noopener noreferrer"
+                       onClick={e=>e.stopPropagation()}
+                       title="Abrir perfil Steam"
+                       className="flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded border bg-blue-500/20 text-blue-400 border-blue-500/40 hover:bg-blue-500/40 transition-colors">
+                      🎮 <span className="text-[10px]">↗</span>
+                    </a>
+                  )}
                 </div>
                 <span className={`font-mono text-sm font-bold w-14 text-right ${sc.text}`}>{p.score.toFixed(0)}</span>
-              </label>
+              </div>
             );
           })}
           {ranked.length===0&&<div className="text-zinc-600 font-mono text-sm text-center py-6">Cadastre jogadores primeiro.</div>}
