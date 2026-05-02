@@ -1253,6 +1253,7 @@ function TournamentTab({isAdmin, setShowLogin}){
     if(!editMatch||!current)return;
     const sc1=Number(s1); const sc2=Number(s2);
     if(s1===""||s2==="")return;
+    if(sc1===sc2){alert("Placar empatado! Digite o resultado final correto.");return;}
     const winner=sc1>sc2?editMatch.team1:editMatch.team2;
     const loser=sc1>sc2?editMatch.team2:editMatch.team1;
     const updatedMatch={...editMatch,score1:sc1,score2:sc2,winner,loser};
@@ -1393,19 +1394,19 @@ function TournamentTab({isAdmin, setShowLogin}){
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={()=>{setEditMatch(null);setS1("");setS2("");}}>
           <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-80 shadow-2xl" onClick={e=>e.stopPropagation()}>
             <h3 className="text-zinc-100 font-bold text-base mb-1">Resultado da Partida</h3>
-            <p className="text-zinc-500 text-xs mb-4 font-mono">{current.format.toUpperCase()} · {current.format==="md3"?"Melhor de 3":"Melhor de 1"}</p>
+            <p className="text-zinc-500 text-xs mb-4 font-mono">{current.format.toUpperCase()} · {current.format==="md3"?"Melhor de 3 mapas (ex: 2-0, 2-1)":"Melhor de 1 mapa (ex: 13-7, 16-14 OT)"}</p>
             <div className="flex flex-col gap-3 mb-4">
               {[{team:editMatch.team1,s:s1,setS:setS1},{team:editMatch.team2,s:s2,setS:setS2}].map(({team,s,setS},i)=>(
                 <div key={i} className="flex items-center gap-3">
                   <span className="text-zinc-200 font-bold text-sm flex-1">{team||"TBD"}</span>
-                  <input type="number" value={s} onChange={e=>setS(e.target.value)} min="0" max={current.format==="md3"?"2":"1"}
+                  <input type="number" value={s} onChange={e=>setS(e.target.value)} min="0"
                     className="w-16 bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-center text-zinc-200 font-mono font-bold text-lg focus:outline-none focus:border-orange-500"/>
                 </div>
               ))}
             </div>
             <div className="flex gap-2">
               <button onClick={()=>{setEditMatch(null);setS1("");setS2("");}} className="flex-1 py-2 rounded-lg border border-zinc-700 text-zinc-400 font-mono text-sm">Cancelar</button>
-              <button onClick={saveMatchResult} disabled={s1===""||s2===""||Number(s1)===Number(s2)}
+              <button onClick={saveMatchResult} disabled={s1===""||s2===""||Number(s1)===Number(s2)||(Number(s1)===0&&Number(s2)===0)}
                 className="flex-1 py-2 rounded-lg bg-orange-500 hover:bg-orange-400 disabled:bg-zinc-700 text-black font-mono font-bold text-sm">Salvar</button>
             </div>
           </div>
