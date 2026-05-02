@@ -801,130 +801,6 @@ function VetoTab(){
   return null;
 }
 
-// ─── ABA: HISTÓRICO ───────────────────────────────────────────
-function HistoryTab({matches,players,loadingMatches}){
-  const [selectedPlayer,setSelectedPlayer]=useState(null);
-
-  const playerMatches=pid=>matches.filter(m=>[...m.teamA,...m.teamB].find(p=>p.id===pid));
-  const playerWins=pid=>playerMatches(pid).filter(m=>{const inA=m.teamA.find(p=>p.id===pid);return(inA&&m.winner==="A")||(!inA&&m.winner==="B");}).length;
-
-  const fmt=ts=>new Date(ts).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"});
-
-  const selP=selectedPlayer?players.find(p=>p.id===selectedPlayer):null;
-  const selMatches=selectedPlayer?playerMatches(selectedPlayer):[];
-  const selWins=selectedPlayer?playerWins(selectedPlayer):0;
-
-  return(
-    <div className="flex flex-col gap-5">
-      {/* Stats rápidas */}
-      <div className="grid grid-cols-3 gap-3">
-        {[{l:"Partidas",v:matches.length,c:"text-zinc-200"},{l:"Jogadores",v:players.length,c:"text-orange-400"},{l:"Mapa mais jogado",v:matches.length?[...MAPS].sort((a,b)=>matches.filter(m=>m.map===b).length-matches.filter(m=>m.map===a).length)[0]:"—",c:"text-blue-400"}].map(({l,v,c})=>(
-          <div key={l} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
-            <div className={`font-mono font-black text-2xl ${c}`}>{v}</div>
-            <div className="text-zinc-500 font-mono text-xs mt-1">{l}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Busca por jogador */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <div className="text-zinc-400 font-mono text-xs uppercase mb-3">📊 Estatísticas por Jogador</div>
-        <div className="flex gap-2 mb-4 flex-wrap">
-          {players.map(p=>(
-            <button key={p.id} onClick={()=>setSelectedPlayer(selectedPlayer===p.id?null:p.id)}
-              className={`px-3 py-1.5 rounded-lg border font-mono text-xs font-bold transition-all ${selectedPlayer===p.id?"border-orange-500 bg-orange-500/10 text-orange-400":"border-zinc-700 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"}`}>
-              {p.name}
-            </button>
-          ))}
-          {players.length===0&&<span className="text-zinc-600 text-sm font-mono">Nenhum jogador cadastrado.</span>}
-        </div>
-
-        {selP&&(
-          <div className="bg-zinc-800/50 rounded-lg p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center text-black font-bold text-sm">{selP.name.slice(0,2).toUpperCase()}</div>
-              <div><div className="text-zinc-100 font-bold">{selP.name}</div><div className="text-zinc-500 text-xs">{selP.city}</div></div>
-              <div className="ml-auto flex gap-4 text-center">
-                <div><div className="text-zinc-100 font-bold font-mono text-lg">{selMatches.length}</div><div className="text-zinc-500 text-xs font-mono">partidas</div></div>
-                <div><div className="text-green-400 font-bold font-mono text-lg">{selWins}</div><div className="text-zinc-500 text-xs font-mono">vitórias</div></div>
-                <div><div className="text-orange-400 font-bold font-mono text-lg">{selMatches.length?Math.round((selWins/selMatches.length)*100):0}%</div><div className="text-zinc-500 text-xs font-mono">win rate</div></div>
-              </div>
-            </div>
-            {/* Evolução de Seed */}
-            {selMatches.length>0&&(
-              <div>
-                <div className="text-zinc-500 font-mono text-xs uppercase mb-2">Evolução de Seed</div>
-                <div className="flex gap-1 flex-wrap">
-                  {selMatches.sort((a,b)=>a.date-b.date).map((m,i)=>{
-                    const inA=m.teamA.find(p=>p.id===selectedPlayer);
-                    const pp=(inA?m.teamA:m.teamB).find(p=>p.id===selectedPlayer);
-                    const won=(inA&&m.winner==="A")||(!inA&&m.winner==="B");
-                    const sc=SEED_COLORS[pp?.seed]||SEED_COLORS[5];
-                    return(
-                      <div key={i} title={`${fmt(m.date)} · ${MAP_ICONS[m.map]} ${m.map}`}
-                        className={`w-8 h-8 rounded border flex flex-col items-center justify-center text-xs font-bold ${sc.border} ${sc.bg} ${sc.text}`}>
-                        S{pp?.seed}
-                        <div className={`text-[8px] ${won?"text-green-400":"text-red-400"}`}>{won?"W":"L"}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            {selMatches.length===0&&<div className="text-zinc-600 font-mono text-sm">Nenhuma partida registrada para {selP.name}.</div>}
-          </div>
-        )}
-      </div>
-
-      {/* Lista de partidas */}
-      <div>
-        <h2 className="text-zinc-300 font-mono font-bold text-sm uppercase tracking-widest mb-3">
-          Partidas Registradas <span className="text-orange-400">({matches.length})</span>
-          {loadingMatches&&<span className="ml-2 inline-flex"><Spinner/></span>}
-        </h2>
-        <div className="flex flex-col gap-3">
-          {matches.length===0&&!loadingMatches&&(
-            <div className="text-center text-zinc-600 font-mono py-12 border border-dashed border-zinc-800 rounded-xl">Nenhuma partida registrada ainda.<br/><span className="text-xs">Registre resultados na aba Draft.</span></div>
-          )}
-          {[...matches].sort((a,b)=>b.date-a.date).map(m=>(
-            <div key={m.id} className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 transition-colors">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-xl">{MAP_ICONS[m.map]||"🗺️"}</span>
-                <span className="text-zinc-100 font-bold">{m.map}</span>
-                <span className="text-zinc-600 font-mono text-xs ml-auto">{fmt(m.date)}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {[{key:"A",team:m.teamA,name:m.nameA},{key:"B",team:m.teamB,name:m.nameB}].map(({key,team,name})=>{
-                  const won=m.winner===key;
-                  return(
-                    <div key={key} className={`rounded-lg p-3 border ${won?"border-green-500/40 bg-green-500/5":"border-zinc-700 bg-zinc-800/30"}`}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`font-mono font-bold text-xs ${won?"text-green-400":"text-zinc-500"}`}>{won?"🏆":""} {name}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {team.map((p,i)=>{
-                          const sc=SEED_COLORS[p.seed]||SEED_COLORS[5];
-                          return(
-                            <div key={i} className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-xs ${sc.border} ${sc.bg}`}>
-                              <span className={`font-bold ${sc.text}`}>S{p.seed}</span>
-                              <span className="text-zinc-400">{p.name}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
 // ─── ABA: ROSTER (Lista Completa de Jogadores) ───────────────
 function RosterTab({players}){
   const [search,setSearch]=useState("");
@@ -1074,6 +950,19 @@ export default function App(){
   const [matches,setMatches]=useState([]);
   const [loadingPlayers,setLoadingPlayers]=useState(true);
   const [loadingMatches,setLoadingMatches]=useState(true);
+  const [isAdmin,setIsAdmin]=useState(()=>sessionStorage.getItem("rivotricsmt_admin")==="1");
+  const [showLogin,setShowLogin]=useState(false);
+  const [loginPwd,setLoginPwd]=useState("");
+  const [loginErr,setLoginErr]=useState(false);
+
+  const ADMIN_PASSWORD = "rivotricsmt@2025";
+  const handleLogin=()=>{
+    if(loginPwd===ADMIN_PASSWORD){
+      setIsAdmin(true);sessionStorage.setItem("rivotricsmt_admin","1");
+      setShowLogin(false);setLoginPwd("");setLoginErr(false);
+    } else { setLoginErr(true); }
+  };
+  const handleLogout=()=>{setIsAdmin(false);sessionStorage.removeItem("rivotricsmt_admin");}; 
 
   useEffect(()=>{
     fb.get("/players").then(data=>{setPlayers(toArr(data));setLoadingPlayers(false);});
@@ -1085,7 +974,7 @@ export default function App(){
     {id:"roster",label:"📋 Jogadores"},
     {id:"draft",label:"🎯 Draft"},
     {id:"veto",label:"🗺 Veto"},
-    {id:"history",label:"📊 Histórico"},
+    {id:"history",label:"🏆 Tabelas"},
   ];
 
   return(
@@ -1103,7 +992,30 @@ export default function App(){
             </button>
             <div className="ml-auto flex items-center gap-3">
               {loadingPlayers?<Spinner/>:<><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"/><span className="text-green-400 font-mono text-xs">{players.length} jogadores</span></>}
+              {isAdmin
+                ? <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-orange-500/40 bg-orange-500/10 text-orange-400 font-mono text-xs font-bold hover:bg-orange-500/20 transition-colors">🔓 Admin</button>
+                : <button onClick={()=>setShowLogin(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 text-zinc-400 font-mono text-xs hover:border-zinc-500 transition-colors">🔒 Admin</button>
+              }
             </div>
+            {/* Modal Login */}
+            {showLogin&&(
+              <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={()=>{setShowLogin(false);setLoginErr(false);setLoginPwd("");}}>
+                <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-80 shadow-2xl" onClick={e=>e.stopPropagation()}>
+                  <div className="text-center mb-5">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-yellow-400 flex items-center justify-center font-black text-black text-xl mx-auto mb-3">🔐</div>
+                    <div className="text-zinc-100 font-bold text-lg">Acesso Admin</div>
+                    <div className="text-zinc-500 text-xs mt-1">Digite a senha para acessar o painel</div>
+                  </div>
+                  <input type="password" value={loginPwd} onChange={e=>{setLoginPwd(e.target.value);setLoginErr(false);}} onKeyDown={e=>e.key==="Enter"&&handleLogin()} placeholder="Senha"
+                    className={`w-full bg-zinc-800 border rounded-lg px-4 py-2.5 text-sm text-zinc-200 focus:outline-none mb-3 ${loginErr?"border-red-500":"border-zinc-700 focus:border-orange-500"}`}/>
+                  {loginErr&&<p className="text-red-400 font-mono text-xs mb-3 text-center">Senha incorreta!</p>}
+                  <div className="flex gap-2">
+                    <button onClick={()=>{setShowLogin(false);setLoginErr(false);setLoginPwd("");}} className="flex-1 py-2 rounded-lg border border-zinc-700 text-zinc-400 font-mono text-sm hover:bg-zinc-800">Cancelar</button>
+                    <button onClick={handleLogin} className="flex-1 py-2 rounded-lg bg-orange-500 hover:bg-orange-400 text-black font-mono font-bold text-sm">Entrar</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1128,11 +1040,417 @@ export default function App(){
         {tab==="roster"&&<RosterTab players={players}/>}
         {tab==="draft"&&<DraftTab players={players} matches={matches} setMatches={setMatches}/>}
         {tab==="veto"&&<VetoTab/>}
-        {tab==="history"&&<HistoryTab matches={matches} players={players} loadingMatches={loadingMatches}/>}
+        {tab==="history"&&<TournamentTab isAdmin={isAdmin} setShowLogin={setShowLogin}/>}
       </div>
 
       <div className="border-t border-zinc-900 mt-12 py-4 text-center">
         <span className="text-zinc-700 font-mono text-xs">RIVOTRICSMT — v2.0 — Firebase Realtime Database</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── ABA: TABELAS (Torneio Double Elimination) ───────────────
+
+// Gera chaveamento Double Elimination para 4 ou 8 times
+function genBracket(teams) {
+  const n = teams.length;
+  // Seeding padrão
+  const seedings4  = [[0,3],[1,2]];
+  const seedings8  = [[0,7],[3,4],[2,5],[1,6]];
+  const seeds = n === 4 ? seedings4 : seedings8;
+  let id = 1;
+  const mid = () => `M${id++}`;
+
+  // Monta partidas Winner
+  const W = [];
+  const Lr1 = []; // losers round 1 → lower bracket
+
+  // Winner Fase 1
+  const wR1 = seeds.map(([a,b]) => ({
+    id: mid(), bracket:"W", round:1,
+    team1: teams[a]||"", team2: teams[b]||"",
+    score1:null, score2:null, winner:null, loser:null,
+    nextWin:null, nextLose:null,
+  }));
+  W.push(wR1);
+
+  // Winner rounds seguintes até sobrar 1
+  let prev = wR1;
+  let wr = 2;
+  while (prev.length > 1) {
+    const cur = [];
+    for (let i = 0; i < prev.length; i += 2) {
+      const m = {id:mid(),bracket:"W",round:wr,team1:null,team2:null,score1:null,score2:null,winner:null,loser:null,nextWin:null,nextLose:null};
+      prev[i].nextWin   = m.id;
+      prev[i+1].nextWin = m.id;
+      cur.push(m);
+    }
+    W.push(cur); prev = cur; wr++;
+  }
+  // Winner Final
+  const wFinal = W[W.length-1][0];
+  wFinal.label = "Winner Final";
+
+  // Lower bracket
+  const L = [];
+  // LR1: losers de W Fase 1 (pares invertidos)
+  const lr1Pairs = n===4 ? [[0,1]] : [[0,3],[1,2]];
+  const lR1 = lr1Pairs.map(([a,b]) => ({
+    id:mid(), bracket:"L", round:1,
+    team1:null, team2:null, score1:null, score2:null, winner:null, loser:null,
+    nextWin:null, nextLose:null,
+    feeder1: wR1[a].id, feeder2: wR1[b].id,
+  }));
+  // Link W R1 losers → L R1
+  if (n===4) { wR1[0].nextLose=lR1[0].id; wR1[1].nextLose=lR1[0].id; }
+  else { wR1[0].nextLose=lR1[0].id; wR1[3].nextLose=lR1[0].id; wR1[1].nextLose=lR1[1].id; wR1[2].nextLose=lR1[1].id; }
+  L.push(lR1);
+
+  // Alternar: round de desafio (loser de W entra) e round normal
+  let lPrev = lR1;
+  let lr = 2;
+  const wLosersPerRound = W.slice(1, -1); // rounds W com losers para lower (exceto W Final)
+
+  for (let wi = 0; wi < wLosersPerRound.length; wi++) {
+    const wLosers = wLosersPerRound[wi]; // matches whose loser drops here
+
+    // Round de desafio: lPrev winners vs W losers
+    const challenge = lPrev.map((lm, i) => {
+      const wm = wLosers[i] || wLosers[0];
+      const m = {id:mid(),bracket:"L",round:lr,team1:null,team2:null,score1:null,score2:null,winner:null,loser:null,nextWin:null,nextLose:null};
+      lm.nextWin = m.id;
+      wm.nextLose = m.id;
+      return m;
+    });
+    L.push(challenge); lr++;
+
+    // Round normal
+    if (challenge.length > 1) {
+      const norm = [];
+      for (let i = 0; i < challenge.length; i += 2) {
+        const m = {id:mid(),bracket:"L",round:lr,team1:null,team2:null,score1:null,score2:null,winner:null,loser:null,nextWin:null,nextLose:null};
+        challenge[i].nextWin   = m.id;
+        challenge[i+1].nextWin = m.id;
+        norm.push(m);
+      }
+      L.push(norm); lr++;
+      lPrev = norm;
+    } else {
+      lPrev = challenge;
+    }
+  }
+
+  // Lower Final: winner de L enfrenta loser de W Final
+  const lFinal = {id:mid(),bracket:"L",round:lr,team1:null,team2:null,score1:null,score2:null,winner:null,loser:null,nextWin:null,nextLose:null,label:"Lower Final"};
+  if (lPrev[0]) lPrev[0].nextWin = lFinal.id;
+  wFinal.nextLose = lFinal.id;
+  L.push([lFinal]);
+
+  // Grand Final
+  const gf = {id:mid(),bracket:"GF",round:0,team1:null,team2:null,score1:null,score2:null,winner:null,loser:null,label:"Grand Final"};
+  wFinal.nextWin  = gf.id;
+  lFinal.nextWin  = gf.id;
+
+  // Flatten all matches
+  const allMatches = [...W.flat(), ...L.flat(), gf];
+  return { W, L, gf, allMatches };
+}
+
+// Atualiza estado das partidas propagando winner/loser
+function propagate(allMatches, changedId) {
+  const map = Object.fromEntries(allMatches.map(m=>[m.id,m]));
+  const changed = map[changedId];
+  if (!changed || !changed.winner) return allMatches;
+
+  const place = (matchId, slot, name) => {
+    const m = map[matchId];
+    if (!m) return;
+    if (!m.team1) m.team1 = name;
+    else if (!m.team2) m.team2 = name;
+  };
+
+  if (changed.nextWin)  place(changed.nextWin,  "win",  changed.winner);
+  if (changed.nextLose) place(changed.nextLose, "lose", changed.loser);
+
+  return Object.values(map);
+}
+
+function MatchCard({m, isAdmin, onClick, format}){
+  const isDone = m.winner !== null;
+  const isGF   = m.bracket === "GF";
+  const isLFin = m.label === "Lower Final";
+
+  return(
+    <div onClick={()=>isAdmin&&onClick(m)}
+      className={`rounded-lg border overflow-hidden w-44 transition-all
+        ${isAdmin?"cursor-pointer hover:border-orange-500/60":""}
+        ${isGF?"border-yellow-500/50 bg-yellow-500/5":isLFin?"border-purple-500/40 bg-purple-500/5":isDone?"border-zinc-700 bg-zinc-800/60":"border-zinc-700 bg-zinc-800/30"}`}>
+      {(m.label)&&<div className={`text-center text-[9px] font-mono uppercase py-0.5 font-bold ${isGF?"text-yellow-400 bg-yellow-500/10":isLFin?"text-purple-400 bg-purple-500/10":"text-zinc-500 bg-zinc-800"}`}>{m.label}</div>}
+      {/* Team 1 */}
+      <div className={`flex items-center gap-2 px-2 py-1.5 border-b border-zinc-700/50 ${m.winner===m.team1?"bg-orange-500/10":""}`}>
+        <span className={`flex-1 text-xs font-bold truncate ${m.team1?m.winner===m.team1?"text-orange-300":"text-zinc-200":"text-zinc-600"}`}>{m.team1||"TBD"}</span>
+        {isDone&&<span className={`font-mono text-xs font-black w-5 text-center rounded ${m.winner===m.team1?"bg-orange-500 text-black":"text-zinc-500"}`}>{m.score1??""}</span>}
+      </div>
+      {/* Team 2 */}
+      <div className={`flex items-center gap-2 px-2 py-1.5 ${m.winner===m.team2?"bg-orange-500/10":""}`}>
+        <span className={`flex-1 text-xs font-bold truncate ${m.team2?m.winner===m.team2?"text-orange-300":"text-zinc-200":"text-zinc-600"}`}>{m.team2||"TBD"}</span>
+        {isDone&&<span className={`font-mono text-xs font-black w-5 text-center rounded ${m.winner===m.team2?"bg-orange-500 text-black":"text-zinc-500"}`}>{m.score2??""}</span>}
+      </div>
+    </div>
+  );
+}
+
+function BracketColumn({label, rounds, isAdmin, onMatch, format}){
+  return(
+    <div className="flex flex-col gap-1 min-w-[11rem]">
+      <div className="text-center text-zinc-500 font-mono text-[10px] uppercase tracking-wider mb-2 pb-1 border-b border-zinc-800">{label}</div>
+      <div className="flex flex-col gap-2">
+        {rounds.map(m=>(
+          <MatchCard key={m.id} m={m} isAdmin={isAdmin} onClick={onMatch} format={format}/>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TournamentTab({isAdmin, setShowLogin}){
+  const [tournaments,setTournaments]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [view,setView]=useState("list"); // list | create | bracket
+  const [current,setCurrent]=useState(null);
+  const [editMatch,setEditMatch]=useState(null);
+  const [s1,setS1]=useState(""); const [s2,setS2]=useState("");
+  const [creating,setCreating]=useState(false);
+  // Create form
+  const [tName,setTName]=useState(""); const [tFormat,setTFormat]=useState("md3");
+  const [tCount,setTCount]=useState(8);
+  const [tTeams,setTTeams]=useState(Array(8).fill(""));
+
+  useEffect(()=>{
+    fb.get("/tournaments").then(d=>{
+      setTournaments(d?Object.entries(d).map(([id,v])=>({...v,id})):[]);
+      setLoading(false);
+    });
+  },[]);
+
+  const createTournament=async()=>{
+    if(!tName.trim())return;
+    const filledTeams=tTeams.slice(0,tCount).map((t,i)=>t.trim()||`Time ${i+1}`);
+    const {W,L,gf,allMatches}=genBracket(filledTeams);
+    const t={name:tName,format:tFormat,teamCount:tCount,teams:filledTeams,matches:allMatches,wRounds:W.length,lRounds:L.length,status:"active",createdAt:Date.now()};
+    setCreating(true);
+    const res=await fb.push("/tournaments",t);
+    if(res?.name){
+      const nt={...t,id:res.name};
+      setTournaments(ts=>[nt,...ts]);
+      setCurrent(nt); setView("bracket");
+    }
+    setCreating(false);
+  };
+
+  const saveMatchResult=async()=>{
+    if(!editMatch||!current)return;
+    const sc1=Number(s1); const sc2=Number(s2);
+    if(s1===""||s2==="")return;
+    const winner=sc1>sc2?editMatch.team1:editMatch.team2;
+    const loser=sc1>sc2?editMatch.team2:editMatch.team1;
+    const updatedMatch={...editMatch,score1:sc1,score2:sc2,winner,loser};
+
+    // Update in matches array
+    let newMatches=[...current.matches.map(m=>m.id===editMatch.id?updatedMatch:m)];
+
+    // Propagate winner/loser to next matches
+    const map=Object.fromEntries(newMatches.map(m=>[m.id,{...m}]));
+    const place=(mid,name,slot)=>{
+      if(!mid||!map[mid])return;
+      if(slot==="win"){if(!map[mid].team1)map[mid].team1=name;else if(!map[mid].team2)map[mid].team2=name;}
+      else{if(!map[mid].team1)map[mid].team1=name;else if(!map[mid].team2)map[mid].team2=name;}
+    };
+    place(updatedMatch.nextWin,winner,"win");
+    place(updatedMatch.nextLose,loser,"lose");
+    newMatches=Object.values(map);
+
+    const updated={...current,matches:newMatches};
+    await fb.set(`/tournaments/${current.id}/matches`,newMatches);
+    setCurrent(updated);
+    setTournaments(ts=>ts.map(t=>t.id===current.id?updated:t));
+    setEditMatch(null);setS1("");setS2("");
+  };
+
+  const deleteTournament=async(id)=>{
+    if(!window.confirm("Excluir este torneio?"))return;
+    await fb.delete(`/tournaments/${id}`);
+    setTournaments(ts=>ts.filter(t=>t.id!==id));
+    if(current?.id===id){setCurrent(null);setView("list");}
+  };
+
+  // Build bracket view from current
+  const buildView=()=>{
+    if(!current)return null;
+    const map=Object.fromEntries(current.matches.map(m=>[m.id,m]));
+    const wRounds=[]; const lRounds=[];
+    const maxWR=Math.max(...current.matches.filter(m=>m.bracket==="W").map(m=>m.round),0);
+    const maxLR=Math.max(...current.matches.filter(m=>m.bracket==="L").map(m=>m.round),0);
+    for(let r=1;r<=maxWR;r++) wRounds.push(current.matches.filter(m=>m.bracket==="W"&&m.round===r));
+    for(let r=1;r<=maxLR;r++) lRounds.push(current.matches.filter(m=>m.bracket==="L"&&m.round===r));
+    const gf=current.matches.find(m=>m.bracket==="GF");
+    return{wRounds,lRounds,gf};
+  };
+
+  const bv=view==="bracket"&&current?buildView():null;
+
+  // Render create
+  if(view==="create") return(
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center gap-3">
+        <button onClick={()=>setView("list")} className="text-zinc-500 hover:text-zinc-300 text-sm font-mono">← Voltar</button>
+        <h2 className="text-orange-400 font-mono font-bold text-sm uppercase">Criar Torneio</h2>
+      </div>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-zinc-500 font-mono uppercase">Nome do Torneio</label>
+            <input value={tName} onChange={e=>setTName(e.target.value)} placeholder="Arena Cup" className="bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-orange-500"/>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-zinc-500 font-mono uppercase">Formato</label>
+            <div className="flex gap-2">
+              {[{v:"md3",l:"MD3"},{v:"md1",l:"MD1"}].map(f=>(
+                <button key={f.v} onClick={()=>setTFormat(f.v)} className={`flex-1 py-2 rounded-lg border font-mono text-sm font-bold transition-all ${tFormat===f.v?"border-orange-500 bg-orange-500/10 text-orange-400":"border-zinc-700 text-zinc-500"}`}>{f.l}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-zinc-500 font-mono uppercase">Número de Times</label>
+          <div className="flex gap-2">
+            {[4,8].map(n=>(
+              <button key={n} onClick={()=>{setTCount(n);setTTeams(Array(n).fill(""));}} className={`px-6 py-2 rounded-lg border font-mono text-sm font-bold transition-all ${tCount===n?"border-orange-500 bg-orange-500/10 text-orange-400":"border-zinc-700 text-zinc-500"}`}>{n} times</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-zinc-500 font-mono uppercase block mb-2">Nomes dos Times (por seed)</label>
+          <div className="grid grid-cols-2 gap-2">
+            {Array(tCount).fill(0).map((_,i)=>(
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-zinc-600 font-mono text-xs w-6 text-right">{i+1}.</span>
+                <input value={tTeams[i]||""} onChange={e=>{const t=[...tTeams];t[i]=e.target.value;setTTeams(t);}} placeholder={`Time ${i+1}`}
+                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5 text-sm text-zinc-200 focus:outline-none focus:border-orange-500"/>
+              </div>
+            ))}
+          </div>
+        </div>
+        <button onClick={createTournament} disabled={!tName.trim()||creating}
+          className="w-full bg-orange-500 hover:bg-orange-400 disabled:bg-zinc-700 text-black font-mono font-bold py-3 rounded-xl text-sm uppercase flex items-center justify-center gap-2">
+          {creating&&<Spinner/>}Gerar Chaveamento ▶
+        </button>
+      </div>
+    </div>
+  );
+
+  // Render bracket
+  if(view==="bracket"&&current&&bv) return(
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={()=>setView("list")} className="text-zinc-500 hover:text-zinc-300 text-sm font-mono">← Voltar</button>
+          <div>
+            <h2 className="text-zinc-100 font-black text-lg">{current.name}</h2>
+            <span className="text-zinc-500 font-mono text-xs">{current.format.toUpperCase()} · {current.teamCount} times · Double Elimination</span>
+          </div>
+        </div>
+        {isAdmin&&<span className="text-orange-400 font-mono text-xs border border-orange-500/30 px-2 py-1 rounded">Clique numa partida para editar</span>}
+        {!isAdmin&&<button onClick={()=>setShowLogin(true)} className="text-zinc-500 font-mono text-xs border border-zinc-700 px-2 py-1 rounded hover:border-zinc-500">🔒 Editar</button>}
+      </div>
+
+      {/* Winner Bracket */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+        <div className="text-orange-400 font-mono text-xs font-bold uppercase mb-4">🏆 Winner Bracket</div>
+        <div className="flex gap-6 overflow-x-auto pb-2">
+          {bv.wRounds.map((rnd,ri)=>(
+            <BracketColumn key={ri} label={ri===bv.wRounds.length-1?"Winner Final":`Fase ${ri+1}`} rounds={rnd} isAdmin={isAdmin} onMatch={m=>{setEditMatch(m);setS1(m.score1??'');setS2(m.score2??'');}} format={current.format}/>
+          ))}
+          {bv.gf&&(
+            <BracketColumn label="Grand Final" rounds={[bv.gf]} isAdmin={isAdmin} onMatch={m=>{setEditMatch(m);setS1(m.score1??'');setS2(m.score2??'');}} format={current.format}/>
+          )}
+        </div>
+      </div>
+
+      {/* Lower Bracket */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+        <div className="text-blue-400 font-mono text-xs font-bold uppercase mb-4">📉 Lower Bracket</div>
+        <div className="flex gap-6 overflow-x-auto pb-2">
+          {bv.lRounds.map((rnd,ri)=>(
+            <BracketColumn key={ri} label={`Perdedores F${ri+1}`} rounds={rnd} isAdmin={isAdmin} onMatch={m=>{setEditMatch(m);setS1(m.score1??'');setS2(m.score2??'');}} format={current.format}/>
+          ))}
+        </div>
+      </div>
+
+      {/* Modal editar partida */}
+      {editMatch&&isAdmin&&(
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={()=>{setEditMatch(null);setS1("");setS2("");}}>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-80 shadow-2xl" onClick={e=>e.stopPropagation()}>
+            <h3 className="text-zinc-100 font-bold text-base mb-1">Resultado da Partida</h3>
+            <p className="text-zinc-500 text-xs mb-4 font-mono">{current.format.toUpperCase()} · {current.format==="md3"?"Melhor de 3":"Melhor de 1"}</p>
+            <div className="flex flex-col gap-3 mb-4">
+              {[{team:editMatch.team1,s:s1,setS:setS1},{team:editMatch.team2,s:s2,setS:setS2}].map(({team,s,setS},i)=>(
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-zinc-200 font-bold text-sm flex-1">{team||"TBD"}</span>
+                  <input type="number" value={s} onChange={e=>setS(e.target.value)} min="0" max={current.format==="md3"?"2":"1"}
+                    className="w-16 bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-center text-zinc-200 font-mono font-bold text-lg focus:outline-none focus:border-orange-500"/>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={()=>{setEditMatch(null);setS1("");setS2("");}} className="flex-1 py-2 rounded-lg border border-zinc-700 text-zinc-400 font-mono text-sm">Cancelar</button>
+              <button onClick={saveMatchResult} disabled={s1===""||s2===""||Number(s1)===Number(s2)}
+                className="flex-1 py-2 rounded-lg bg-orange-500 hover:bg-orange-400 disabled:bg-zinc-700 text-black font-mono font-bold text-sm">Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Render list
+  return(
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-zinc-100 font-black text-xl">Tabelas</h2>
+          <p className="text-zinc-500 text-xs mt-0.5">Chaveamentos Double Elimination</p>
+        </div>
+        {isAdmin
+          ? <button onClick={()=>{setView("create");setTName("");setTFormat("md3");setTCount(8);setTTeams(Array(8).fill(""));}}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-400 text-black font-mono font-bold rounded-lg text-sm">＋ Novo Torneio</button>
+          : <button onClick={()=>setShowLogin(true)} className="flex items-center gap-2 px-4 py-2 border border-zinc-700 text-zinc-400 font-mono rounded-lg text-sm hover:border-zinc-500">🔒 Login Admin</button>
+        }
+      </div>
+
+      {loading&&<div className="flex justify-center py-12"><Spinner/></div>}
+
+      <div className="flex flex-col gap-3">
+        {tournaments.map(t=>(
+          <div key={t.id} className="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 flex items-center gap-4 transition-colors cursor-pointer" onClick={()=>{setCurrent(t);setView("bracket");}}>
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-yellow-400 flex items-center justify-center font-black text-black text-sm shrink-0">🏆</div>
+            <div className="flex-1">
+              <div className="text-zinc-100 font-bold">{t.name}</div>
+              <div className="text-zinc-500 text-xs mt-0.5 font-mono">{t.format.toUpperCase()} · {t.teamCount} times · Double Elimination · {new Date(t.createdAt).toLocaleDateString("pt-BR")}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-orange-400 font-mono text-xs border border-orange-500/30 px-2 py-1 rounded">Ver Chave →</span>
+              {isAdmin&&<button onClick={e=>{e.stopPropagation();deleteTournament(t.id);}} className="text-zinc-600 hover:text-red-400 transition-colors text-sm px-1">✕</button>}
+            </div>
+          </div>
+        ))}
+        {tournaments.length===0&&!loading&&(
+          <div className="text-center text-zinc-600 font-mono py-16 border border-dashed border-zinc-800 rounded-xl">
+            Nenhum torneio criado ainda.<br/>
+            <span className="text-xs">{isAdmin?"Clique em '+ Novo Torneio' para começar.":"Faça login como admin para criar torneios."}</span>
+          </div>
+        )}
       </div>
     </div>
   );
