@@ -932,114 +932,130 @@ function RosterTab({players}){
     .filter(p=>p.name.toLowerCase().includes(search.toLowerCase())||p.city?.toLowerCase().includes(search.toLowerCase()))
     .sort((a,b)=>b.score-a.score);
 
-  const sel=selected?seeded.find(p=>p.id===selected):null;
+  const openLink=(e,url)=>{e.stopPropagation();window.open(url.startsWith("http")?url:"https://"+url,"_blank");};
 
   return(
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-zinc-100 font-black text-xl">Roster Completo</h2>
-          <p className="text-zinc-500 text-xs mt-0.5">{players.length} jogadores cadastrados</p>
+          <h2 className="text-zinc-100 font-black text-xl">Jogadores</h2>
+          <p className="text-zinc-500 text-xs mt-0.5">{players.length} cadastrados</p>
         </div>
-        <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar jogador..."
-          className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500 w-48"/>
+        <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar..."
+          className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500 w-44"/>
       </div>
 
-      {/* Grid de jogadores */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {filtered.map(p=>{
-          const sc=SEED_COLORS[p.seed]||SEED_COLORS[5];
-          const isOpen=selected===p.id;
-          return(
-            <div key={p.id} className={`bg-zinc-900 border rounded-xl overflow-hidden transition-all cursor-pointer ${isOpen?sc.border+" shadow-lg":"border-zinc-800 hover:border-zinc-700"}`}
-              onClick={()=>setSelected(isOpen?null:p.id)}>
-              {/* Card topo */}
-              <div className="flex items-center gap-3 p-4">
-                {/* Avatar com Seed */}
-                <div className={`w-12 h-12 rounded-xl border-2 flex flex-col items-center justify-center shrink-0 ${sc.border} ${sc.bg}`}>
-                  <span className={`font-black text-sm leading-none ${sc.text}`}>S{p.seed}</span>
-                  <span className="text-zinc-600 text-[9px] font-mono">#{filtered.indexOf(p)+1}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-100 font-bold text-base truncate">{p.name}</span>
-                    {p.age&&<span className="text-zinc-600 text-xs font-mono">{p.age}a</span>}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-zinc-500 text-xs">📍 {p.city||"—"}</span>
-                  </div>
-                  <div className="flex gap-1 mt-1.5 flex-wrap">
-                    {p.gcLevel!==""&&<span className="text-xs font-mono px-1.5 py-0.5 rounded border bg-green-500/20 text-green-400 border-green-500/40">GC {p.gcLevel}</span>}
-                    {p.faceitLevel!==""&&<span className="text-xs font-mono px-1.5 py-0.5 rounded border bg-orange-500/20 text-orange-400 border-orange-500/40">FC {p.faceitLevel}</span>}
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className={`font-mono font-black text-xl ${sc.text}`}>{p.score.toFixed(0)}</div>
-                  <div className="text-zinc-600 text-[10px] font-mono">SCORE</div>
-                  <div className="text-zinc-600 text-[10px] mt-1">{isOpen?"▲":"▼"}</div>
-                </div>
-              </div>
+      {/* Tabela */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        {/* Cabeçalho */}
+        <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-zinc-800 bg-zinc-950/50">
+          <div className="col-span-1 text-zinc-600 font-mono text-xs uppercase">#</div>
+          <div className="col-span-3 text-zinc-600 font-mono text-xs uppercase">Jogador</div>
+          <div className="col-span-2 text-zinc-600 font-mono text-xs uppercase">Cidade</div>
+          <div className="col-span-2 text-zinc-600 font-mono text-xs uppercase">GC / FC</div>
+          <div className="col-span-2 text-zinc-600 font-mono text-xs uppercase">Score</div>
+          <div className="col-span-2 text-zinc-600 font-mono text-xs uppercase text-right">Links</div>
+        </div>
 
-              {/* Expandido: links e detalhes */}
-              {isOpen&&(
-                <div className="border-t border-zinc-800 px-4 py-3 bg-zinc-950/50">
-                  <div className="text-zinc-500 font-mono text-xs uppercase mb-3">Perfis & Links</div>
-                  <div className="flex flex-col gap-2">
+        {/* Linhas */}
+        <div className="flex flex-col divide-y divide-zinc-800/50">
+          {filtered.map((p,i)=>{
+            const sc=SEED_COLORS[p.seed]||SEED_COLORS[5];
+            const isOpen=selected===p.id;
+            return(
+              <div key={p.id}>
+                {/* Linha principal */}
+                <div
+                  onClick={()=>setSelected(isOpen?null:p.id)}
+                  className={`grid grid-cols-12 gap-2 px-4 py-3 items-center cursor-pointer transition-colors hover:bg-zinc-800/40 ${isOpen?"bg-zinc-800/30":""}`}>
+
+                  {/* # + Seed */}
+                  <div className="col-span-1 flex items-center gap-1.5">
+                    <span className="text-zinc-600 font-mono text-xs">{i+1}</span>
+                    <div className={`w-6 h-6 rounded text-[10px] font-black flex items-center justify-center ${sc.bg} ${sc.text} border ${sc.border}`}>S{p.seed}</div>
+                  </div>
+
+                  {/* Nome */}
+                  <div className="col-span-3 flex flex-col">
+                    <span className="text-zinc-100 font-bold text-sm truncate">{p.name}</span>
+                    {p.age&&<span className="text-zinc-600 text-xs">{p.age} anos</span>}
+                  </div>
+
+                  {/* Cidade */}
+                  <div className="col-span-2">
+                    <span className="text-zinc-400 text-xs truncate">{p.city||"—"}</span>
+                  </div>
+
+                  {/* GC / FC levels */}
+                  <div className="col-span-2 flex gap-1 flex-wrap">
+                    {p.gcLevel!==""&&<span className="text-[10px] font-mono px-1.5 py-0.5 rounded border bg-green-500/20 text-green-400 border-green-500/40">GC {p.gcLevel}</span>}
+                    {p.faceitLevel!==""&&<span className="text-[10px] font-mono px-1.5 py-0.5 rounded border bg-orange-500/20 text-orange-400 border-orange-500/40">FC {p.faceitLevel}</span>}
+                  </div>
+
+                  {/* Score */}
+                  <div className="col-span-2 flex flex-col gap-1">
+                    <span className={`font-mono font-bold text-sm ${sc.text}`}>{p.score.toFixed(0)}</span>
+                    <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${sc.text.replace("text-","bg-").replace("-400","-500")}`} style={{width:`${p.score}%`,background:"linear-gradient(to right, #f97316, #eab308)"}}/>
+                    </div>
+                  </div>
+
+                  {/* Links rápidos */}
+                  <div className="col-span-2 flex gap-1.5 justify-end items-center">
                     {p.steamUrl&&(
-                      <a href={p.steamUrl.startsWith("http")?p.steamUrl:"https://"+p.steamUrl}
-                         target="_blank" rel="noopener noreferrer"
-                         onClick={e=>e.stopPropagation()}
-                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/15 transition-colors">
-                        <span className="text-base">🎮</span>
-                        <span className="text-blue-400 font-mono text-xs font-bold flex-1">STEAM</span>
-                        <span className="text-blue-600 text-xs">Abrir perfil ↗</span>
-                      </a>
+                      <button onClick={e=>openLink(e,p.steamUrl)} title="Steam"
+                        className="w-7 h-7 rounded border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/30 text-blue-400 text-xs flex items-center justify-center transition-colors">🎮</button>
                     )}
                     {p.gcUrl&&(
-                      <a href={p.gcUrl.startsWith("http")?p.gcUrl:"https://"+p.gcUrl}
-                         target="_blank" rel="noopener noreferrer"
-                         onClick={e=>e.stopPropagation()}
-                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-green-500/30 bg-green-500/5 hover:bg-green-500/15 transition-colors">
-                        <span className="text-base">🏆</span>
-                        <span className="text-green-400 font-mono text-xs font-bold flex-1">GAMERSCLUB</span>
-                        {p.gcLevel!==""&&<span className="text-green-600 font-mono text-xs">Level {p.gcLevel}</span>}
-                        <span className="text-green-600 text-xs">↗</span>
-                      </a>
+                      <button onClick={e=>openLink(e,p.gcUrl)} title="GamersCLUB"
+                        className="w-7 h-7 rounded border border-green-500/40 bg-green-500/10 hover:bg-green-500/30 text-green-400 text-xs flex items-center justify-center transition-colors">🏆</button>
                     )}
                     {p.faceitUrl&&(
-                      <a href={p.faceitUrl.startsWith("http")?p.faceitUrl:"https://"+p.faceitUrl}
-                         target="_blank" rel="noopener noreferrer"
-                         onClick={e=>e.stopPropagation()}
-                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/15 transition-colors">
-                        <span className="text-base">⚡</span>
-                        <span className="text-orange-400 font-mono text-xs font-bold flex-1">FACEIT</span>
-                        {p.faceitLevel!==""&&<span className="text-orange-600 font-mono text-xs">Level {p.faceitLevel}</span>}
-                        <span className="text-orange-600 text-xs">↗</span>
-                      </a>
+                      <button onClick={e=>openLink(e,p.faceitUrl)} title="FACEIT"
+                        className="w-7 h-7 rounded border border-orange-500/40 bg-orange-500/10 hover:bg-orange-500/30 text-orange-400 text-xs flex items-center justify-center transition-colors">⚡</button>
                     )}
-                    {p.phone&&(
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 bg-zinc-800/30">
-                        <span className="text-base">📱</span>
-                        <span className="text-zinc-400 font-mono text-xs font-bold flex-1">TELEFONE</span>
-                        <span className="text-zinc-400 text-xs">{p.phone}</span>
-                      </div>
-                    )}
-                    {!p.steamUrl&&!p.gcUrl&&!p.faceitUrl&&!p.phone&&(
-                      <div className="text-zinc-600 font-mono text-xs text-center py-2">Nenhum link cadastrado.</div>
-                    )}
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center justify-between">
-                    <div className={`text-xs font-mono ${sc.text}`}>Score: {p.score.toFixed(1)} / 100</div>
-                    <ScoreBar score={p.score}/>
+                    <span className="text-zinc-700 text-xs ml-1">{isOpen?"▲":"▼"}</span>
                   </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
+
+                {/* Linha expandida: detalhes */}
+                {isOpen&&(
+                  <div className="px-4 py-3 bg-zinc-950/60 border-t border-zinc-800/50">
+                    <div className="flex flex-wrap gap-3">
+                      {p.phone&&(
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800/40 text-xs">
+                          <span>📱</span><span className="text-zinc-400">{p.phone}</span>
+                        </div>
+                      )}
+                      {p.steamUrl&&(
+                        <a href={p.steamUrl.startsWith("http")?p.steamUrl:"https://"+p.steamUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/15 text-blue-400 text-xs font-mono transition-colors">
+                          🎮 STEAM ↗
+                        </a>
+                      )}
+                      {p.gcUrl&&(
+                        <a href={p.gcUrl.startsWith("http")?p.gcUrl:"https://"+p.gcUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-green-500/30 bg-green-500/5 hover:bg-green-500/15 text-green-400 text-xs font-mono transition-colors">
+                          🏆 GAMERSCLUB {p.gcLevel!==""&&`· Lv.${p.gcLevel}`} ↗
+                        </a>
+                      )}
+                      {p.faceitUrl&&(
+                        <a href={p.faceitUrl.startsWith("http")?p.faceitUrl:"https://"+p.faceitUrl} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/15 text-orange-400 text-xs font-mono transition-colors">
+                          ⚡ FACEIT {p.faceitLevel!==""&&`· Lv.${p.faceitLevel}`} ↗
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
         {filtered.length===0&&(
-          <div className="col-span-2 text-center text-zinc-600 font-mono py-16 border border-dashed border-zinc-800 rounded-xl">
+          <div className="text-center text-zinc-600 font-mono py-16">
             {players.length===0?"Nenhum jogador cadastrado ainda.":"Nenhum resultado para a busca."}
           </div>
         )}
