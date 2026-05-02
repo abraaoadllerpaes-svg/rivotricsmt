@@ -1091,13 +1091,13 @@ export default function App(){
       <div className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex items-center gap-4 py-4">
-            <div className="flex items-center gap-2">
+            <button onClick={()=>setTab("players")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <div className="w-8 h-8 rounded bg-gradient-to-br from-orange-500 to-yellow-400 flex items-center justify-center font-black text-black text-sm">CS</div>
               <div>
                 <div className="font-black text-base leading-none text-zinc-100 tracking-wide">RIVOTRICSMT</div>
                 <div className="text-orange-400 font-mono text-xs">Counter-Strike 2 · Firebase</div>
               </div>
-            </div>
+            </button>
             <div className="ml-auto flex items-center gap-3">
               {loadingPlayers?<Spinner/>:<><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"/><span className="text-green-400 font-mono text-xs">{players.length} jogadores</span></>}
             </div>
