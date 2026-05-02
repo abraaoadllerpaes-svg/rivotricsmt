@@ -45,10 +45,10 @@ const FACEIT_LEVELS = [
 function calcEloProgress(elo,lvl){if(!lvl)return 0.5;const r=lvl.maxElo-lvl.minElo;if(r<=0||lvl.maxElo===99999)return 1;return Math.min(Math.max((elo-lvl.minElo)/r,0),1);}
 function calcPtsProgress(pts,lvl){if(!lvl)return 0.5;const r=lvl.maxPts-lvl.minPts;if(r<=0||lvl.maxPts===99999)return 1;return Math.min(Math.max((pts-lvl.minPts)/r,0),1);}
 function calcScore(p){
-  const hasGC=p.gcLevel!==""&&p.gcPoints!=="";const hasFC=p.faceitLevel!==""&&p.faceitElo!=="";
+  const hasGC=p.gcLevel!=="";const hasFC=p.faceitLevel!=="";
   let gc=0,fc=0;
-  if(hasGC){const lvl=GC_LEVELS[Number(p.gcLevel)];gc=(Number(p.gcLevel)/21*0.70+calcPtsProgress(Number(p.gcPoints),lvl)*0.30)*100;}
-  if(hasFC){const lvl=FACEIT_LEVELS[Number(p.faceitLevel)-1];fc=(Number(p.faceitLevel)/10*0.70+calcEloProgress(Number(p.faceitElo),lvl)*0.30)*100;}
+  if(hasGC){gc=(Number(p.gcLevel)/21)*100;}
+  if(hasFC){fc=(Number(p.faceitLevel)/10)*100;}
   if(hasGC&&hasFC)return fc*0.55+gc*0.45;if(hasFC)return fc;if(hasGC)return gc;return 0;
 }
 function assignSeeds(players){
@@ -151,37 +151,29 @@ function PlayersTab({players,setPlayers,loading}){
           <div className="grid grid-cols-2 gap-6">
             <div className="bg-zinc-800/50 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3"><div className="w-2 h-2 rounded-full bg-green-400"/><span className="text-green-400 font-mono text-xs font-bold">GAMERSCLUB</span></div>
-              <div className="grid grid-cols-2 gap-3">
+              <div>
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-zinc-500 font-mono uppercase">Level (0–21)</label>
                   <select value={form.gcLevel} onChange={e=>set("gcLevel",e.target.value===""?"":Number(e.target.value))} className="bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-green-500">
                     <option value="">—</option>{GC_LEVELS.map(l=><option key={l.level} value={l.level}>Level {l.level}</option>)}
                   </select>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-zinc-500 font-mono uppercase">Pontos GC</label>
-                  <input type="number" value={form.gcPoints} onChange={e=>set("gcPoints",Number(e.target.value))} placeholder="ex: 3500"
-                    className="bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-green-500"/>
-                </div>
+
               </div>
-              {form.gcLevel!==""&&<p className="text-xs text-zinc-500 mt-2 font-mono">Range: {GC_LEVELS[form.gcLevel]?.minPts} – {GC_LEVELS[form.gcLevel]?.maxPts===99999?"∞":GC_LEVELS[form.gcLevel]?.maxPts} pts</p>}
+
             </div>
             <div className="bg-zinc-800/50 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3"><div className="w-2 h-2 rounded-full bg-orange-400"/><span className="text-orange-400 font-mono text-xs font-bold">FACEIT</span></div>
-              <div className="grid grid-cols-2 gap-3">
+              <div>
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-zinc-500 font-mono uppercase">Level (1–10)</label>
                   <select value={form.faceitLevel} onChange={e=>set("faceitLevel",e.target.value===""?"":Number(e.target.value))} className="bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-orange-500">
                     <option value="">—</option>{FACEIT_LEVELS.map(l=><option key={l.level} value={l.level}>Level {l.level}</option>)}
                   </select>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-zinc-500 font-mono uppercase">ELO FACEIT</label>
-                  <input type="number" value={form.faceitElo} onChange={e=>set("faceitElo",Number(e.target.value))} placeholder="ex: 1450"
-                    className="bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500"/>
-                </div>
+
               </div>
-              {form.faceitLevel!==""&&<p className="text-xs text-zinc-500 mt-2 font-mono">Range: {FACEIT_LEVELS[form.faceitLevel-1]?.minElo} – {FACEIT_LEVELS[form.faceitLevel-1]?.maxElo===99999?"∞":FACEIT_LEVELS[form.faceitLevel-1]?.maxElo} ELO</p>}
+
             </div>
           </div>
         </div>
@@ -235,8 +227,8 @@ function PlayersTab({players,setPlayers,loading}){
                     {p.age&&<Badge color="gray">{p.age}a</Badge>}
                   </div>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    {p.gcLevel!==""&&<Badge color="green">GC Lv.{p.gcLevel} · {p.gcPoints}pts</Badge>}
-                    {p.faceitLevel!==""&&<Badge color="orange">FC Lv.{p.faceitLevel} · {p.faceitElo} ELO</Badge>}
+                    {p.gcLevel!==""&&<Badge color="green">GC Lv.{p.gcLevel}</Badge>}
+                    {p.faceitLevel!==""&&<Badge color="orange">FC Lv.{p.faceitLevel}</Badge>}
                   </div>
                   <ScoreBar score={p.score}/>
                 </div>
