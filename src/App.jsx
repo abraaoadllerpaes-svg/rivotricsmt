@@ -12,8 +12,8 @@ const fb = {
 const toArr = obj => obj ? Object.entries(obj).map(([id,v])=>({...v,id})) : [];
 
 // ─── CONSTANTES ───────────────────────────────────────────────
-const MAPS = ["Mirage","Inferno","Nuke","Vertigo","Ancient","Anubis","Overpass"];
-const MAP_ICONS = {Mirage:"🏜️",Inferno:"🔥",Nuke:"☢️",Vertigo:"🏗️",Ancient:"🏛️",Anubis:"🐺",Overpass:"🌉"};
+const MAPS = ["Mirage","Inferno","Nuke","Dust2","Ancient","Anubis","Overpass"];
+const MAP_ICONS = {Mirage:"🏜️",Inferno:"🔥",Nuke:"☢️",Dust2:"🏜️",Ancient:"🏛️",Anubis:"🐺",Overpass:"🌉"};
 
 const GC_LEVELS = [
   {level:0,minPts:0,maxPts:99},{level:1,minPts:100,maxPts:249},{level:2,minPts:250,maxPts:449},
