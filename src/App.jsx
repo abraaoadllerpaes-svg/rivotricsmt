@@ -773,6 +773,331 @@ function VetoTab(){
 
 // ─── ABA: TABELAS ────────────────────────────────────────────
 
+
+
+
+
+// ─── ABA: MÍDIAS ─────────────────────────────────────────────
+
+function ImageViewer({images, startIndex, onClose}){
+  const [idx,setIdx]=useState(startIndex||0);
+  const [zoom,setZoom]=useState(1);
+  const [offset,setOffset]=useState({x:0,y:0});
+  const [dragging,setDragging]=useState(false);
+  const [dragStart,setDragStart]=useState({x:0,y:0});
+  const total=images.length;
+  const img=images[idx]||images[0];
+  const goTo=i=>{setIdx((i+total)%total);setZoom(1);setOffset({x:0,y:0});};
+  const prev=()=>goTo(idx-1);
+  const next=()=>goTo(idx+1);
+  const zoomIn=e=>{e.stopPropagation();setZoom(z=>Math.min(z+0.25,4));};
+  const zoomOut=e=>{e.stopPropagation();setZoom(z=>{const n=Math.max(z-0.25,0.5);if(n<=1)setOffset({x:0,y:0});return n;});};
+  const zoomReset=e=>{e.stopPropagation();setZoom(1);setOffset({x:0,y:0});};
+  const onMD=e=>{if(zoom<=1)return;e.preventDefault();setDragging(true);setDragStart({x:e.clientX-offset.x,y:e.clientY-offset.y});};
+  const onMM=e=>{if(!dragging)return;setOffset({x:e.clientX-dragStart.x,y:e.clientY-dragStart.y});};
+  const onMU=()=>setDragging(false);
+  useEffect(()=>{
+    const h=e=>{if(e.key==="ArrowLeft")prev();if(e.key==="ArrowRight")next();if(e.key==="Escape")onClose();if(e.key==="+")setZoom(z=>Math.min(z+0.25,4));if(e.key==="-")setZoom(z=>{const n=Math.max(z-0.25,0.5);if(n<=1)setOffset({x:0,y:0});return n;});};
+    window.addEventListener("keydown",h);return()=>window.removeEventListener("keydown",h);
+  },[idx,zoom]);
+  return(
+    <div className="fixed inset-0 bg-black/96 z-[70] flex flex-col select-none" onMouseMove={onMM} onMouseUp={onMU} onMouseLeave={onMU}>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/90 shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="text-zinc-200 font-mono text-xs font-bold">{idx+1} <span className="text-zinc-600">/</span> {total}</span>
+          {img.caption&&<span className="text-zinc-400 text-xs truncate max-w-[200px]">{img.caption}</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={zoomOut} className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-bold text-base flex items-center justify-center transition-colors">-</button>
+          <button onClick={zoomReset} className="px-3 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-mono text-xs transition-colors min-w-[52px]">{Math.round(zoom*100)}%</button>
+          <button onClick={zoomIn} className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-bold text-base flex items-center justify-center transition-colors">+</button>
+          <div className="w-px h-6 bg-zinc-700 mx-1"/>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 border border-zinc-700 hover:border-red-500/40 text-zinc-400 hover:text-red-400 font-bold flex items-center justify-center transition-colors">X</button>
+        </div>
+      </div>
+      <div className="flex-1 relative flex items-center justify-center overflow-hidden" onClick={e=>{if(e.target===e.currentTarget)onClose();}} style={{cursor:zoom>1?(dragging?"grabbing":"grab"):"default"}}>
+        {total>1&&<button onClick={e=>{e.stopPropagation();prev();}} className="absolute left-3 z-10 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 border border-zinc-700 text-zinc-200 font-bold text-2xl flex items-center justify-center transition-colors">&lt;</button>}
+        <img src={img.imageBase64||img.src} alt={img.caption||"Imagem"} onMouseDown={onMD} draggable={false}
+          style={{transform:`scale(${zoom}) translate(${offset.x/zoom}px,${offset.y/zoom}px)`,transition:dragging?"none":"transform 0.15s ease",maxWidth:"88vw",maxHeight:"78vh",objectFit:"contain",userSelect:"none"}}
+          className="rounded-lg shadow-2xl"/>
+        {total>1&&<button onClick={e=>{e.stopPropagation();next();}} className="absolute right-3 z-10 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 border border-zinc-700 text-zinc-200 font-bold text-2xl flex items-center justify-center transition-colors">&gt;</button>}
+      </div>
+      {total>1&&(
+        <div className="flex gap-1.5 justify-center px-4 py-2 border-t border-zinc-800 bg-zinc-900/80 overflow-x-auto shrink-0">
+          {images.map((im,i)=>(
+            <div key={i} onClick={()=>goTo(i)} className={`w-12 h-9 rounded overflow-hidden border-2 cursor-pointer shrink-0 transition-all ${i===idx?"border-orange-500":"border-zinc-700 hover:border-zinc-500"}`}>
+              <img src={im.imageBase64||im.src} alt="" className="w-full h-full object-cover"/>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center justify-center gap-6 py-1.5 bg-zinc-950/80 shrink-0">
+        {total>1&&<span className="text-zinc-700 font-mono text-[9px]">seta esq/dir navegar</span>}
+        <span className="text-zinc-700 font-mono text-[9px]">- + zoom</span>
+        {zoom>1&&<span className="text-zinc-700 font-mono text-[9px]">arrastar para mover</span>}
+        <span className="text-zinc-700 font-mono text-[9px]">ESC fechar</span>
+      </div>
+    </div>
+  );
+}
+
+function CreateGalleryModal({onClose,onCreated}){
+  const [title,setTitle]=useState("");
+  const [date,setDate]=useState("");
+  const [desc,setDesc]=useState("");
+  const [files,setFiles]=useState([]);
+  const [saving,setSaving]=useState(false);
+  const [dragging,setDragging]=useState(false);
+  const fileRef=useRef(null);
+  const addFiles=newFiles=>{
+    const allowed=["image/png","image/jpeg","image/jpg"];
+    const valid=Array.from(newFiles).filter(f=>allowed.includes(f.type)&&f.size<=4*1024*1024);
+    if(valid.length<newFiles.length)alert("Alguns arquivos ignorados (tipo invalido ou >4MB).");
+    valid.forEach(file=>{const r=new FileReader();r.onload=e=>setFiles(prev=>[...prev,{file,preview:e.target.result,caption:""}]);r.readAsDataURL(file);});
+  };
+  const removeFile=i=>setFiles(prev=>prev.filter((_,idx)=>idx!==i));
+  const setCaption=(i,v)=>setFiles(prev=>prev.map((f,idx)=>idx===i?{...f,caption:v}:f));
+  const handleSave=async()=>{
+    if(!title.trim()||!date){alert("Preencha titulo e data!");return;}
+    setSaving(true);
+    const images={};
+    files.forEach((f,i)=>{const id=`img_${Date.now()}_${i}`;images[id]={imageBase64:f.preview,caption:f.caption,uploadedAt:Date.now()};});
+    const album={title:title.trim(),date,description:desc,createdAt:Date.now(),images};
+    const res=await fb.push("/midias",album);
+    if(res?.name)onCreated({...album,id:res.name});
+    setSaving(false);onClose();
+  };
+  return(
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-xl shadow-2xl max-h-[92vh] flex flex-col" onClick={e=>e.stopPropagation()}>
+        <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 text-base">+</div>
+            <h3 className="text-zinc-100 font-bold text-sm">Nova galeria</h3>
+          </div>
+          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 text-xl w-7 h-7 flex items-center justify-center transition-colors">X</button>
+        </div>
+        <div className="p-6 flex flex-col gap-4 overflow-y-auto">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1 col-span-2">
+              <label className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Titulo da galeria *</label>
+              <input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Ex: Mix de Maio — Rodada 1" className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500"/>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Data *</label>
+              <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-orange-500"/>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Descricao (opcional)</label>
+              <input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Ex: Rodada 1 — MD3" className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500"/>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Imagens (opcional)</label>
+            <div onDragOver={e=>{e.preventDefault();setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={e=>{e.preventDefault();setDragging(false);addFiles(e.dataTransfer.files);}} onClick={()=>fileRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl py-6 text-center cursor-pointer transition-all ${dragging?"border-orange-500 bg-orange-500/10":"border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800/30"}`}>
+              <div className="text-zinc-400 text-sm font-mono">Arraste ou clique para adicionar fotos</div>
+              <div className="text-zinc-600 text-xs mt-1">PNG, JPG, JPEG, max 4MB cada</div>
+              <input ref={fileRef} type="file" accept=".png,.jpg,.jpeg" multiple className="hidden" onChange={e=>addFiles(e.target.files)}/>
+            </div>
+          </div>
+          {files.length>0&&(
+            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+              {files.map((f,i)=>(
+                <div key={i} className="flex items-center gap-3 bg-zinc-800/50 border border-zinc-700/50 rounded-lg p-2">
+                  <div className="w-12 h-9 rounded overflow-hidden shrink-0 border border-zinc-700"><img src={f.preview} alt="" className="w-full h-full object-cover"/></div>
+                  <input value={f.caption} onChange={e=>setCaption(i,e.target.value)} placeholder="Legenda (opcional)" className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500"/>
+                  <button onClick={()=>removeFile(i)} className="text-zinc-600 hover:text-red-400 transition-colors text-sm shrink-0">X</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="border-t border-zinc-800 px-6 py-4 flex gap-3 shrink-0">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-zinc-700 hover:border-zinc-500 text-zinc-400 font-mono text-sm rounded-xl transition-colors">Cancelar</button>
+          <button onClick={handleSave} disabled={saving||!title.trim()||!date} className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-400 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-mono font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2">
+            {saving?<><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"/>Salvando...</>:"Criar galeria"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MidiasTab({isAdmin}){
+  const [albums,setAlbums]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [view,setView]=useState("list");
+  const [current,setCurrent]=useState(null);
+  const [showCreate,setShowCreate]=useState(false);
+  const [viewer,setViewer]=useState(null);
+  const [addDragging,setAddDragging]=useState(false);
+  const [addUploading,setAddUploading]=useState(false);
+  const addFileRef=useRef(null);
+
+  useEffect(()=>{
+    fb.get("/midias").then(d=>{const list=d?Object.entries(d).map(([id,v])=>({...v,id})):[];list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));setAlbums(list);setLoading(false);});
+  },[]);
+
+  const albumImages=current?Object.entries(current.images||{}).map(([id,v])=>({...v,id})).sort((a,b)=>a.uploadedAt-b.uploadedAt):[];
+  const openAlbum=album=>{setCurrent(album);setView("gallery");};
+  const backToList=()=>{setView("list");setCurrent(null);};
+  const handleCreated=album=>{setAlbums(prev=>[album,...prev].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)));};
+
+  const addImagesToAlbum=async rawFiles=>{
+    if(!current||!rawFiles||rawFiles.length===0)return;
+    setAddUploading(true);
+    const fileArr=Array.from(rawFiles);
+    const allowed=["image/png","image/jpeg","image/jpg"];
+    const valid=fileArr.filter(f=>allowed.includes(f.type)&&f.size<=4*1024*1024);
+    if(valid.length===0){setAddUploading(false);return;}
+    const newImages={};
+    let done=0;
+    valid.forEach((file,i)=>{
+      const r=new FileReader();
+      r.onload=async e=>{
+        const id=`img_${Date.now()}_${i}_${Math.random().toString(36).slice(2)}`;
+        newImages[id]={imageBase64:e.target.result,caption:"",uploadedAt:Date.now()};
+        done++;
+        if(done===valid.length){
+          await fb.patch(`/midias/${current.id}/images`,newImages);
+          const updated=await fb.get(`/midias/${current.id}`);
+          if(updated){const u={...updated,id:current.id};setCurrent(u);setAlbums(prev=>prev.map(a=>a.id===current.id?u:a));}
+          setAddUploading(false);
+        }
+      };
+      r.readAsDataURL(file);
+    });
+  };
+
+  const deleteImage=async imgId=>{
+    if(!window.confirm("Remover esta imagem?"))return;
+    await fb.delete(`/midias/${current.id}/images/${imgId}`);
+    const updated=await fb.get(`/midias/${current.id}`);
+    if(updated){const u={...updated,id:current.id};setCurrent(u);setAlbums(prev=>prev.map(a=>a.id===current.id?u:a));}
+  };
+
+  const deleteAlbum=async()=>{
+    if(!window.confirm("Excluir esta galeria permanentemente?"))return;
+    await fb.delete(`/midias/${current.id}`);
+    setAlbums(prev=>prev.filter(a=>a.id!==current.id));
+    backToList();
+  };
+
+  const formatDate=d=>{if(!d)return"—";const[y,m,day]=d.split("-");return`${day}/${m}/${y}`;};
+
+  if(view==="gallery"&&current) return(
+    <div className="flex flex-col gap-5">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={backToList} className="text-zinc-500 hover:text-zinc-300 font-mono text-sm transition-colors">voltar</button>
+          <div>
+            <h2 className="text-zinc-100 font-black text-xl">{current.title}</h2>
+            <div className="flex items-center gap-3 mt-0.5">
+              <span className="text-zinc-500 font-mono text-xs">📅 {formatDate(current.date)}</span>
+              <span className="text-zinc-700 font-mono text-xs">·</span>
+              <span className="text-zinc-500 font-mono text-xs">{albumImages.length} foto{albumImages.length!==1?"s":""}</span>
+              {current.description&&<><span className="text-zinc-700 font-mono text-xs">·</span><span className="text-zinc-500 text-xs">{current.description}</span></>}
+            </div>
+          </div>
+        </div>
+        {isAdmin&&<button onClick={deleteAlbum} className="text-zinc-600 hover:text-red-400 font-mono text-xs border border-zinc-700 hover:border-red-500/40 px-3 py-1.5 rounded-lg transition-colors">Excluir galeria</button>}
+      </div>
+      {isAdmin&&(
+        <div onDragOver={e=>{e.preventDefault();setAddDragging(true);}} onDragLeave={()=>setAddDragging(false)} onDrop={e=>{e.preventDefault();setAddDragging(false);addImagesToAlbum(e.dataTransfer.files);}} onClick={()=>addFileRef.current?.click()}
+          className={`border-2 border-dashed rounded-xl py-4 text-center cursor-pointer transition-all ${addDragging?"border-orange-500 bg-orange-500/10":"border-zinc-800 hover:border-zinc-600 hover:bg-zinc-800/20"}`}>
+          {addUploading
+            ?<div className="flex items-center justify-center gap-2 text-orange-400 font-mono text-sm"><div className="w-4 h-4 border-2 border-orange-400/30 border-t-orange-400 rounded-full animate-spin"/>Enviando imagens...</div>
+            :<div className="flex items-center justify-center gap-2 text-zinc-500 font-mono text-sm hover:text-zinc-300 transition-colors">+ Adicionar mais fotos a esta galeria</div>
+          }
+          <input ref={addFileRef} type="file" accept=".png,.jpg,.jpeg" multiple className="hidden" onChange={e=>addImagesToAlbum(e.target.files)}/>
+        </div>
+      )}
+      {albumImages.length===0?(
+        <div className="text-center text-zinc-600 font-mono py-16 border border-dashed border-zinc-800 rounded-xl">
+          <div className="text-4xl mb-3">📷</div>Nenhuma imagem nesta galeria ainda.
+        </div>
+      ):(
+        <div className="grid grid-cols-3 gap-2">
+          {albumImages.map((img,i)=>(
+            <div key={img.id||i} className="group relative rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900 aspect-video">
+              <img src={img.imageBase64} alt={img.caption||`Foto ${i+1}`} onClick={()=>setViewer({images:albumImages,index:i})} className="w-full h-full object-cover cursor-zoom-in transition-transform group-hover:scale-105 duration-300"/>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center pointer-events-none">
+                <span className="text-white text-xs font-mono opacity-0 group-hover:opacity-100 transition-opacity">Ampliar</span>
+              </div>
+              {img.caption&&(
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-1.5 pointer-events-none">
+                  <span className="text-white text-[10px] font-mono truncate block">{img.caption}</span>
+                </div>
+              )}
+              {isAdmin&&(
+                <button onClick={e=>{e.stopPropagation();deleteImage(img.id);}} className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 hover:bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">X</button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {viewer&&<ImageViewer images={viewer.images} startIndex={viewer.index} onClose={()=>setViewer(null)}/>}
+    </div>
+  );
+
+  return(
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div><h2 className="text-zinc-100 font-black text-xl">Midias</h2><p className="text-zinc-500 text-xs mt-0.5">Galerias de fotos dos Mixes</p></div>
+        {isAdmin
+          ?<button onClick={()=>setShowCreate(true)} className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-400 text-black font-mono font-bold rounded-lg text-sm transition-colors">📸 Nova galeria</button>
+          :<div className="text-zinc-600 font-mono text-xs border border-zinc-800 px-3 py-2 rounded-lg">Admin para gerenciar</div>
+        }
+      </div>
+      {loading&&<div className="flex justify-center py-16"><div className="w-6 h-6 border-2 border-zinc-600 border-t-orange-400 rounded-full animate-spin"/></div>}
+      {!loading&&albums.length===0&&(
+        <div className="text-center text-zinc-600 font-mono py-20 border border-dashed border-zinc-800 rounded-2xl">
+          <div className="text-5xl mb-4">📷</div>
+          <div className="text-sm">Nenhuma galeria criada ainda.</div>
+          {isAdmin&&<div className="text-xs mt-2 text-zinc-700">Clique em "Nova galeria" para comecar.</div>}
+        </div>
+      )}
+      <div className="flex flex-col gap-4">
+        {albums.map(album=>{
+          const imgs=Object.values(album.images||{}).sort((a,b)=>a.uploadedAt-b.uploadedAt);
+          const count=imgs.length;const thumbs=imgs.slice(0,4);
+          return(
+            <div key={album.id} onClick={()=>openAlbum(album)} className="bg-zinc-900 border border-zinc-800 hover:border-zinc-600 rounded-2xl overflow-hidden cursor-pointer transition-all group">
+              {thumbs.length>0?(
+                <div className={`grid gap-0.5 ${thumbs.length===1?"grid-cols-1":thumbs.length===2?"grid-cols-2":"grid-cols-4"} h-36`}>
+                  {thumbs.map((img,i)=>(
+                    <div key={i} className="relative overflow-hidden">
+                      <img src={img.imageBase64} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+                      {i===3&&count>4&&<div className="absolute inset-0 bg-black/60 flex items-center justify-center"><span className="text-white font-black text-xl font-mono">+{count-4}</span></div>}
+                    </div>
+                  ))}
+                </div>
+              ):(
+                <div className="h-24 bg-zinc-800/50 flex items-center justify-center"><span className="text-4xl opacity-30">📷</span></div>
+              )}
+              <div className="px-5 py-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-zinc-100 font-bold text-base">{album.title}</h3>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-orange-400 font-mono text-xs font-bold">📅 {formatDate(album.date)}</span>
+                    <span className="text-zinc-600 font-mono text-xs">{count} foto{count!==1?"s":""}</span>
+                    {album.description&&<span className="text-zinc-500 text-xs">{album.description}</span>}
+                  </div>
+                </div>
+                <span className="text-zinc-500 group-hover:text-orange-400 font-mono text-sm transition-colors">Ver galeria</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {showCreate&&<CreateGalleryModal onClose={()=>setShowCreate(false)} onCreated={album=>handleCreated(album)}/>}
+    </div>
+  );
+}
+
+
+
 // ─── ABA: TABELAS — PROVA DE RESULTADO ───────────────────────
 
 const PROOF_STATUS = {
@@ -1522,7 +1847,7 @@ export default function App(){
   const tabs=[
     {id:"mix",   label:"🎮 Jogar Mix"},
     {id:"roster",label:"📋 Jogadores"},
-    {id:"draft", label:"🎯 Draft"},
+    {id:"midias", label:"📸 Mídias"},
     {id:"veto",  label:"🗺 Veto"},
     {id:"history",label:"🏆 Tabelas"},
   ];
@@ -1570,7 +1895,7 @@ export default function App(){
       <div className="max-w-4xl mx-auto px-4 py-8">
         {tab==="mix"    &&<MixTab isAdmin={isAdmin} setShowLogin={setShowLogin}/>}
         {tab==="roster" &&<RosterTab players={players} setPlayers={setPlayers}/>}
-        {tab==="draft"  &&<DraftTab players={players} matches={matches} setMatches={setMatches}/>}
+        {tab==="midias"  &&<MidiasTab isAdmin={isAdmin}/>}
         {tab==="veto"   &&<VetoTab/>}
         {tab==="history"&&<TournamentTab isAdmin={isAdmin} setShowLogin={setShowLogin}/>}
       </div>
