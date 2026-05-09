@@ -1305,7 +1305,7 @@ function TournamentTab({isAdmin,setShowLogin}){
   const [uploadModal, setUploadModal] = useState(null); // match obj
   const [viewModal,   setViewModal]   = useState(null); // match obj
 
-  useEffect(()=>{fb.get("/tournaments").then(d=>{setTournaments(d?Object.entries(d).map(([id,v])=>({...v,id})):[]);setLoading(false);});} ,[]);
+  useEffect(()=>{fb.get("/tournaments").then(d=>{const list=d?Object.entries(d).map(([id,v])=>({...v,id})):[];list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));setTournaments(list);setLoading(false);});} ,[]);
 
   // Carrega provas quando o torneio é aberto
   useEffect(()=>{
@@ -1325,7 +1325,7 @@ function TournamentTab({isAdmin,setShowLogin}){
     setProofData(prev => ({...prev, [matchId]: {...(prev[matchId]||{}), status}}));
   };
 
-  const createTournament=async()=>{if(!tName.trim())return;const filledTeams=tTeams.slice(0,tCount).map((t,i)=>t.trim()||`Time ${i+1}`);const{W,L,gf,allMatches}=genBracket(filledTeams);const t={name:tName,format:tFormat,teamCount:tCount,teams:filledTeams,matches:allMatches,wRounds:W.length,lRounds:L.length,status:"active",createdAt:Date.now()};setCreating(true);const res=await fb.push("/tournaments",t);if(res?.name){const nt={...t,id:res.name};setTournaments(ts=>[nt,...ts]);setCurrent(nt);setView("bracket");}setCreating(false);};
+  const createTournament=async()=>{if(!tName.trim())return;const filledTeams=tTeams.slice(0,tCount).map((t,i)=>t.trim()||`Time ${i+1}`);const{W,L,gf,allMatches}=genBracket(filledTeams);const t={name:tName,format:tFormat,teamCount:tCount,teams:filledTeams,matches:allMatches,wRounds:W.length,lRounds:L.length,status:"active",createdAt:Date.now()};setCreating(true);const res=await fb.push("/tournaments",t);if(res?.name){const nt={...t,id:res.name};setTournaments(ts=>[nt,...ts].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)));setCurrent(nt);setView("bracket");}setCreating(false);};
 
   const saveMatchResult=async()=>{if(!editMatch||!current)return;const sc1=Number(s1);const sc2=Number(s2);if(s1===""||s2==="")return;if(sc1===sc2){alert("Placar empatado!");return;}const winner=sc1>sc2?editMatch.team1:editMatch.team2;const loser=sc1>sc2?editMatch.team2:editMatch.team1;const updatedMatch={...editMatch,score1:sc1,score2:sc2,winner,loser};let newMatches=[...current.matches.map(m=>m.id===editMatch.id?updatedMatch:m)];const map=Object.fromEntries(newMatches.map(m=>[m.id,{...m}]));const place=(mid,name)=>{if(!mid||!map[mid])return;if(!map[mid].team1)map[mid].team1=name;else if(!map[mid].team2)map[mid].team2=name;};place(updatedMatch.nextWin,winner);place(updatedMatch.nextLose,loser);newMatches=Object.values(map);const updated={...current,matches:newMatches};await fb.set(`/tournaments/${current.id}/matches`,newMatches);setCurrent(updated);setTournaments(ts=>ts.map(t=>t.id===current.id?updated:t));setEditMatch(null);setS1("");setS2("");};
 
