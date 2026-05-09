@@ -777,6 +777,167 @@ function VetoTab(){
 
 
 
+// ─── ABA: INÍCIO ─────────────────────────────────────────────
+const IG_URL = "https://www.instagram.com/rivotricsmt?igsh=MW9rdGJjNW50azc0";
+
+// Logo Instagram SVG
+function IconInstagram({size=32}){
+  return(
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="ig1" cx="30%" cy="107%" r="150%">
+          <stop offset="0%" stopColor="#fdf497"/>
+          <stop offset="5%" stopColor="#fdf497"/>
+          <stop offset="45%" stopColor="#fd5949"/>
+          <stop offset="60%" stopColor="#d6249f"/>
+          <stop offset="90%" stopColor="#285AEB"/>
+        </radialGradient>
+      </defs>
+      <rect width="48" height="48" rx="12" fill="url(#ig1)"/>
+      <rect x="14" y="14" width="20" height="20" rx="5.5" stroke="white" strokeWidth="2.5" fill="none"/>
+      <circle cx="24" cy="24" r="5" stroke="white" strokeWidth="2.5" fill="none"/>
+      <circle cx="30.5" cy="17.5" r="1.5" fill="white"/>
+    </svg>
+  );
+}
+
+function HomeTab({isAdmin, setShowLogin}){
+  const [config,  setConfig]  = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [eDesc,   setEDesc]   = useState("");
+  const [eRules,  setERules]  = useState("");
+  const [saving,  setSaving]  = useState(false);
+
+  useEffect(()=>{
+    fb.get("/home-config").then(d=>{if(d)setConfig(d);setLoading(false);});
+  },[]);
+
+  const startEdit=()=>{setEDesc(config?.description||"");setERules(config?.rules||"");setEditing(true);};
+  const cancelEdit=()=>setEditing(false);
+  const saveEdit=async()=>{
+    setSaving(true);
+    const data={description:eDesc,rules:eRules,updatedAt:Date.now()};
+    await fb.set("/home-config",data);
+    setConfig(data);setSaving(false);setEditing(false);
+  };
+
+  const ruleLines=(config?.rules||"").split("\n").filter(r=>r.trim());
+
+  return(
+    <div className="flex flex-col gap-6">
+
+      {/* ── INSTAGRAM ── */}
+      <div className="rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900">
+        {/* Banner degradê */}
+        <div className="h-2 w-full" style={{background:"linear-gradient(90deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)"}}/>
+        <div className="px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg shadow-pink-500/20">
+                <div className="w-full h-full flex items-center justify-center" style={{background:"linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)"}}>
+                  <IconInstagram size={36}/>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="text-zinc-100 font-black text-base">@rivotricsmt</div>
+              <div className="text-zinc-500 text-xs font-mono mt-0.5">Instagram oficial do grupo</div>
+            </div>
+          </div>
+          <a href={IG_URL} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono font-bold text-sm text-white transition-all hover:opacity-90 hover:scale-105 active:scale-95 shadow-lg shadow-pink-500/20"
+            style={{background:"linear-gradient(135deg,#f09433,#dc2743,#bc1888)"}}>
+            <IconInstagram size={16}/>
+            Seguir
+          </a>
+        </div>
+      </div>
+
+      {/* ── DESCRIÇÃO + REGRAS ── */}
+      {loading ? (
+        <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-zinc-700 border-t-orange-400 rounded-full animate-spin"/></div>
+      ) : editing ? (
+        /* ── MODO EDIÇÃO ── */
+        <div className="flex flex-col gap-4 bg-zinc-900 border border-zinc-700 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-orange-400 font-mono font-bold text-xs uppercase tracking-widest">Editar conteúdo</span>
+            <button onClick={cancelEdit} className="text-zinc-600 hover:text-zinc-400 font-mono text-xs transition-colors">Cancelar</button>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Descrição do grupo</label>
+            <textarea value={eDesc} onChange={e=>setEDesc(e.target.value)} rows={5}
+              placeholder="Descreva o grupo, missão, quem pode participar..."
+              className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500 resize-none transition-colors"/>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Regras (uma por linha)</label>
+            <textarea value={eRules} onChange={e=>setERules(e.target.value)} rows={8}
+              placeholder={"Seja respeitoso com todos.\nProibido trash talk excessivo.\nPareça no horário combinado.\n..."}
+              className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500 resize-none transition-colors font-mono"/>
+            <p className="text-zinc-600 text-[10px] font-mono mt-0.5">Cada linha vira uma regra numerada.</p>
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button onClick={cancelEdit} className="flex-1 py-2.5 border border-zinc-700 hover:border-zinc-500 text-zinc-400 font-mono text-sm rounded-xl transition-colors">Cancelar</button>
+            <button onClick={saveEdit} disabled={saving}
+              className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-400 disabled:bg-zinc-700 text-black font-mono font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2">
+              {saving?<><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"/>Salvando...</>:"✓ Salvar"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* ── MODO VISUALIZAÇÃO ── */
+        <>
+          {/* Descrição */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 rounded-full bg-orange-500"/>
+                <h2 className="text-zinc-100 font-black text-base uppercase tracking-wide">Sobre o Grupo</h2>
+              </div>
+              {isAdmin&&<button onClick={startEdit} className="text-zinc-500 hover:text-orange-400 font-mono text-xs border border-zinc-700 hover:border-orange-500/40 px-3 py-1.5 rounded-lg transition-colors">✏ Editar</button>}
+              {!isAdmin&&<button onClick={()=>setShowLogin(true)} className="text-zinc-600 font-mono text-xs border border-zinc-800 px-3 py-1.5 rounded-lg hover:border-zinc-600 transition-colors">🔒 Admin</button>}
+            </div>
+            {config?.description ? (
+              <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">{config.description}</p>
+            ) : (
+              <p className="text-zinc-600 text-sm font-mono italic">{isAdmin?"Clique em 'Editar' para adicionar uma descrição.":"Nenhuma descrição cadastrada ainda."}</p>
+            )}
+          </div>
+
+          {/* Regras */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 rounded-full bg-orange-500"/>
+                <h2 className="text-zinc-100 font-black text-base uppercase tracking-wide">Regras</h2>
+              </div>
+              {isAdmin&&<button onClick={startEdit} className="text-zinc-500 hover:text-orange-400 font-mono text-xs border border-zinc-700 hover:border-orange-500/40 px-3 py-1.5 rounded-lg transition-colors">✏ Editar</button>}
+              {!isAdmin&&<button onClick={()=>setShowLogin(true)} className="text-zinc-600 font-mono text-xs border border-zinc-800 px-3 py-1.5 rounded-lg hover:border-zinc-600 transition-colors">🔒 Admin</button>}
+            </div>
+            {ruleLines.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {ruleLines.map((rule,i)=>(
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 font-black text-xs shrink-0 mt-0.5">{i+1}</div>
+                    <p className="text-zinc-300 text-sm leading-relaxed flex-1">{rule.trim()}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-zinc-600 text-sm font-mono italic">{isAdmin?"Clique em 'Editar' para adicionar as regras.":"Nenhuma regra cadastrada ainda."}</p>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+
 // ─── ABA: MÍDIAS ─────────────────────────────────────────────
 
 function ImageViewer({images, startIndex, onClose}){
@@ -1889,7 +2050,7 @@ function TournamentTab({isAdmin,setShowLogin}){
 
 // ─── APP PRINCIPAL ────────────────────────────────────────────
 export default function App(){
-  const[tab,setTab]=useState("mix");
+  const[tab,setTab]=useState("home");
   const[players,setPlayers]=useState([]);
   const[matches,setMatches]=useState([]);
   const[loadingPlayers,setLoadingPlayers]=useState(true);
@@ -1908,6 +2069,7 @@ export default function App(){
   },[]);
 
   const tabs=[
+    {id:"home",  label:"🏠 Início"},
     {id:"mix",   label:"🎮 Jogar Mix"},
     {id:"roster",label:"📋 Jogadores"},
     {id:"midias", label:"📸 Mídias"},
@@ -1956,6 +2118,7 @@ export default function App(){
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
+        {tab==="home"   &&<HomeTab isAdmin={isAdmin} setShowLogin={setShowLogin}/>}
         {tab==="mix"    &&<MixTab isAdmin={isAdmin} setShowLogin={setShowLogin}/>}
         {tab==="roster" &&<RosterTab players={players} setPlayers={setPlayers}/>}
         {tab==="midias"  &&<MidiasTab isAdmin={isAdmin}/>}
