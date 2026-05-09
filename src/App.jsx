@@ -949,7 +949,23 @@ function ProofUploadModal({match, tournament, onClose, onSaved}){
 
 // ─── MODAL: VER PROVA ────────────────────────────────────────
 function ProofViewModal({match, proof, isAdmin, onClose, onStatusChange}){
-  const [changing, setChanging] = useState(false);
+  const [changing,     setChanging]     = useState(false);
+  const [imgExpanded,  setImgExpanded]  = useState(false);
+  const [zoom,         setZoom]         = useState(1);
+  const [dragPos,      setDragPos]      = useState({x:0,y:0});
+  const [dragging,     setDragging]     = useState(false);
+  const [dragStart,    setDragStart]    = useState({x:0,y:0});
+  const [imgOffset,    setImgOffset]    = useState({x:0,y:0});
+
+  const openExpanded = () => { setImgExpanded(true); setZoom(1); setImgOffset({x:0,y:0}); };
+  const closeExpanded = () => { setImgExpanded(false); setZoom(1); setImgOffset({x:0,y:0}); };
+  const zoomIn  = e => { e.stopPropagation(); setZoom(z => Math.min(z + 0.25, 4)); };
+  const zoomOut = e => { e.stopPropagation(); setZoom(z => { const n = Math.max(z - 0.25, 0.5); if(n <= 1) setImgOffset({x:0,y:0}); return n; }); };
+  const zoomReset = e => { e.stopPropagation(); setZoom(1); setImgOffset({x:0,y:0}); };
+
+  const onMouseDown = e => { if(zoom <= 1) return; e.preventDefault(); setDragging(true); setDragStart({x: e.clientX - imgOffset.x, y: e.clientY - imgOffset.y}); };
+  const onMouseMove = e => { if(!dragging) return; setImgOffset({x: e.clientX - dragStart.x, y: e.clientY - dragStart.y}); };
+  const onMouseUp   = () => setDragging(false);
   const st = proof ? PROOF_STATUS[proof.status] : null;
   const date = proof?.uploadedAt
     ? new Date(proof.uploadedAt).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})
@@ -1025,9 +1041,85 @@ function ProofViewModal({match, proof, isAdmin, onClose, onStatusChange}){
 
             {/* Imagem */}
             {proof.imageBase64 && (
-              <div className="rounded-xl overflow-hidden border border-zinc-700 bg-zinc-800">
-                <img src={proof.imageBase64} alt="Prova de resultado"
-                  className="w-full object-contain max-h-64"/>
+              <div className="flex flex-col gap-1">
+                <div
+                  onClick={openExpanded}
+                  className="rounded-xl overflow-hidden border border-zinc-700 bg-zinc-800 cursor-zoom-in group relative">
+                  <img src={proof.imageBase64} alt="Prova de resultado"
+                    className="w-full object-contain max-h-64 transition-opacity group-hover:opacity-90"/>
+                  {/* Hint de zoom */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="bg-black/60 text-white text-xs font-mono font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                      🔍 Ampliar imagem
+                    </div>
+                  </div>
+                </div>
+                <button onClick={openExpanded}
+                  className="text-[10px] text-zinc-500 font-mono hover:text-orange-400 transition-colors text-center">
+                  🔍 Clique para ampliar
+                </button>
+              </div>
+            )}
+
+            {/* VIEWER FULLSCREEN */}
+            {imgExpanded && proof.imageBase64 && (
+              <div
+                className="fixed inset-0 bg-black/95 z-[60] flex flex-col"
+                onMouseMove={onMouseMove}
+                onMouseUp={onMouseUp}
+                onMouseLeave={onMouseUp}>
+
+                {/* Toolbar */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/80 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-300 font-mono text-xs font-bold">Prova — {proof.team1||"TBD"} × {proof.team2||"TBD"}</span>
+                    {proof.map && <span className="text-zinc-600 font-mono text-xs">{MAP_ICONS[proof.map]} {proof.map}</span>}
+                  </div>
+                  {/* Controles de zoom */}
+                  <div className="flex items-center gap-2">
+                    <button onClick={zoomOut}
+                      className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-bold text-lg flex items-center justify-center transition-colors">−</button>
+                    <button onClick={zoomReset}
+                      className="px-3 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-mono text-xs transition-colors min-w-[52px]">
+                      {Math.round(zoom * 100)}%
+                    </button>
+                    <button onClick={zoomIn}
+                      className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 font-bold text-lg flex items-center justify-center transition-colors">+</button>
+                    <div className="w-px h-6 bg-zinc-700 mx-1"/>
+                    <button onClick={closeExpanded}
+                      className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 border border-zinc-700 hover:border-red-500/50 text-zinc-400 hover:text-red-400 font-bold flex items-center justify-center transition-colors">✕</button>
+                  </div>
+                </div>
+
+                {/* Área da imagem */}
+                <div
+                  className="flex-1 overflow-hidden flex items-center justify-center"
+                  onClick={e => { if(e.target === e.currentTarget) closeExpanded(); }}
+                  style={{cursor: zoom > 1 ? (dragging ? "grabbing" : "grab") : "zoom-out"}}>
+                  <img
+                    src={proof.imageBase64}
+                    alt="Prova ampliada"
+                    onMouseDown={onMouseDown}
+                    draggable={false}
+                    style={{
+                      transform: `scale(${zoom}) translate(${imgOffset.x / zoom}px, ${imgOffset.y / zoom}px)`,
+                      transition: dragging ? "none" : "transform 0.15s ease",
+                      maxWidth:  "90vw",
+                      maxHeight: "80vh",
+                      objectFit: "contain",
+                      userSelect: "none",
+                    }}
+                    className="rounded-lg shadow-2xl"
+                  />
+                </div>
+
+                {/* Dica de uso */}
+                <div className="flex items-center justify-center gap-6 py-2 border-t border-zinc-800 bg-zinc-900/60 shrink-0">
+                  <span className="text-zinc-600 font-mono text-[10px]">− / + para zoom</span>
+                  <span className="text-zinc-600 font-mono text-[10px]">Click % para resetar</span>
+                  {zoom > 1 && <span className="text-zinc-600 font-mono text-[10px]">Arraste para mover</span>}
+                  <span className="text-zinc-600 font-mono text-[10px]">✕ ou fundo para fechar</span>
+                </div>
               </div>
             )}
 
