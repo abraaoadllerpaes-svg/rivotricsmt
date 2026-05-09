@@ -778,7 +778,8 @@ function VetoTab(){
 
 
 // ─── ABA: INÍCIO ─────────────────────────────────────────────
-const IG_URL = "https://www.instagram.com/rivotricsmt?igsh=MW9rdGJjNW50azc0";
+const IG_URL  = "https://www.instagram.com/rivotricsmt?igsh=MW9rdGJjNW50azc0";
+const DC_URL  = "https://discord.gg/GSB5hxTK";
 
 // Logo Instagram SVG
 function IconInstagram({size=32}){
@@ -797,6 +798,16 @@ function IconInstagram({size=32}){
       <rect x="14" y="14" width="20" height="20" rx="5.5" stroke="white" strokeWidth="2.5" fill="none"/>
       <circle cx="24" cy="24" r="5" stroke="white" strokeWidth="2.5" fill="none"/>
       <circle cx="30.5" cy="17.5" r="1.5" fill="white"/>
+    </svg>
+  );
+}
+
+// Logo Discord SVG
+function IconDiscord({size=32}){
+  return(
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="48" height="48" rx="12" fill="#5865F2"/>
+      <path d="M34.1 15.4a24.6 24.6 0 0 0-6.1-1.9l-.3.5a17 17 0 0 0-1.7-.1c-.6 0-1.1 0-1.7.1l-.3-.5a24.8 24.8 0 0 0-6.1 1.9C15 20.2 13.5 24.9 13.8 29.5c2.2 1.6 4.3 2.6 6.3 3.2l.8-1.1a16 16 0 0 1-2.4-1.2l.6-.5a17.7 17.7 0 0 0 15 0l.6.5a16 16 0 0 1-2.4 1.2l.8 1.1c2-.6 4.1-1.6 6.3-3.2.3-5.2-1.5-9.8-4.3-14.1ZM20.2 26.8c-1.2 0-2.2-1.1-2.2-2.5s1-2.5 2.2-2.5c1.3 0 2.3 1.1 2.2 2.5 0 1.4-1 2.5-2.2 2.5Zm7.6 0c-1.2 0-2.2-1.1-2.2-2.5s1-2.5 2.2-2.5c1.3 0 2.3 1.1 2.2 2.5 0 1.4-.9 2.5-2.2 2.5Z" fill="white"/>
     </svg>
   );
 }
@@ -827,34 +838,56 @@ function HomeTab({isAdmin, setShowLogin}){
   return(
     <div className="flex flex-col gap-6">
 
-      {/* ── INSTAGRAM ── */}
-      <div className="rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900">
-        {/* Banner degradê */}
-        <div className="h-2 w-full" style={{background:"linear-gradient(90deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)"}}/>
-        <div className="px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg shadow-pink-500/20">
-                <div className="w-full h-full flex items-center justify-center" style={{background:"linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)"}}>
-                  <IconInstagram size={36}/>
-                </div>
+      {/* ── REDES SOCIAIS (Instagram + Discord) ── */}
+      <div className="grid grid-cols-2 gap-4">
+
+        {/* Instagram */}
+        <div className="rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900">
+          <div className="h-2 w-full" style={{background:"linear-gradient(90deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)"}}/>
+          <div className="px-5 py-5 flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg shadow-pink-500/20 shrink-0">
+              <div className="w-full h-full flex items-center justify-center" style={{background:"linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)"}}>
+                <IconInstagram size={40}/>
               </div>
             </div>
-            <div>
+            <div className="text-center">
               <div className="text-zinc-100 font-black text-base">@rivotricsmt</div>
               <div className="text-zinc-500 text-xs font-mono mt-0.5">Instagram oficial do grupo</div>
             </div>
+            <a href={IG_URL} target="_blank" rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-mono font-bold text-sm text-white transition-all hover:opacity-90 hover:scale-105 active:scale-95 shadow-lg shadow-pink-500/20"
+              style={{background:"linear-gradient(135deg,#f09433,#dc2743,#bc1888)"}}>
+              <IconInstagram size={16}/>
+              Seguir no Instagram
+            </a>
           </div>
-          <a href={IG_URL} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono font-bold text-sm text-white transition-all hover:opacity-90 hover:scale-105 active:scale-95 shadow-lg shadow-pink-500/20"
-            style={{background:"linear-gradient(135deg,#f09433,#dc2743,#bc1888)"}}>
-            <IconInstagram size={16}/>
-            Seguir
-          </a>
         </div>
+
+        {/* Discord */}
+        <div className="rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900">
+          <div className="h-2 w-full" style={{background:"linear-gradient(90deg,#5865F2,#7289da,#4752c4)"}}/>
+          <div className="px-5 py-5 flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg shadow-indigo-500/20 shrink-0">
+              <div className="w-full h-full flex items-center justify-center" style={{background:"#5865F2"}}>
+                <IconDiscord size={40}/>
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-zinc-100 font-black text-base">RivoTricsMT</div>
+              <div className="text-zinc-500 text-xs font-mono mt-0.5">Servidor oficial do Discord</div>
+            </div>
+            <a href={DC_URL} target="_blank" rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-mono font-bold text-sm text-white transition-all hover:opacity-90 hover:scale-105 active:scale-95 shadow-lg shadow-indigo-500/20"
+              style={{background:"linear-gradient(135deg,#5865F2,#4752c4)"}}>
+              <IconDiscord size={16}/>
+              Entrar no Discord
+            </a>
+          </div>
+        </div>
+
       </div>
 
-      {/* ── DESCRIÇÃO + REGRAS ── */}
+            {/* ── DESCRIÇÃO + REGRAS ── */}
       {loading ? (
         <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-zinc-700 border-t-orange-400 rounded-full animate-spin"/></div>
       ) : editing ? (
