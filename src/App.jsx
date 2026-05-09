@@ -933,7 +933,24 @@ function MidiasTab({isAdmin}){
   const [viewer,setViewer]=useState(null);
   const [addDragging,setAddDragging]=useState(false);
   const [addUploading,setAddUploading]=useState(false);
+  const [editModal,setEditModal]=useState(false);
+  const [editTitle,setEditTitle]=useState("");
+  const [editDate,setEditDate]=useState("");
+  const [editDesc,setEditDesc]=useState("");
+  const [editSaving,setEditSaving]=useState(false);
   const addFileRef=useRef(null);
+
+  const openEdit=()=>{setEditTitle(current.title||"");setEditDate(current.date||"");setEditDesc(current.description||"");setEditModal(true);};
+  const saveEdit=async()=>{
+    if(!editTitle.trim()||!editDate){alert("Preencha titulo e data!");return;}
+    setEditSaving(true);
+    const patch={title:editTitle.trim(),date:editDate,description:editDesc};
+    await fb.patch(`/midias/${current.id}`,patch);
+    const updated={...current,...patch};
+    setCurrent(updated);
+    setAlbums(prev=>prev.map(a=>a.id===current.id?updated:a));
+    setEditSaving(false);setEditModal(false);
+  };
 
   useEffect(()=>{
     fb.get("/midias").then(d=>{const list=d?Object.entries(d).map(([id,v])=>({...v,id})):[];list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));setAlbums(list);setLoading(false);});
@@ -1001,7 +1018,12 @@ function MidiasTab({isAdmin}){
             </div>
           </div>
         </div>
-        {isAdmin&&<button onClick={deleteAlbum} className="text-zinc-600 hover:text-red-400 font-mono text-xs border border-zinc-700 hover:border-red-500/40 px-3 py-1.5 rounded-lg transition-colors">Excluir galeria</button>}
+        {isAdmin&&(
+          <div className="flex items-center gap-2">
+            <button onClick={openEdit} className="text-zinc-400 hover:text-orange-400 font-mono text-xs border border-zinc-700 hover:border-orange-500/40 px-3 py-1.5 rounded-lg transition-colors">✏ Editar</button>
+            <button onClick={deleteAlbum} className="text-zinc-600 hover:text-red-400 font-mono text-xs border border-zinc-700 hover:border-red-500/40 px-3 py-1.5 rounded-lg transition-colors">🗑 Excluir</button>
+          </div>
+        )}
       </div>
       {isAdmin&&(
         <div onDragOver={e=>{e.preventDefault();setAddDragging(true);}} onDragLeave={()=>setAddDragging(false)} onDrop={e=>{e.preventDefault();setAddDragging(false);addImagesToAlbum(e.dataTransfer.files);}} onClick={()=>addFileRef.current?.click()}
@@ -1038,6 +1060,47 @@ function MidiasTab({isAdmin}){
         </div>
       )}
       {viewer&&<ImageViewer images={viewer.images} startIndex={viewer.index} onClose={()=>setViewer(null)}/>}
+
+      {/* Modal editar galeria */}
+      {editModal&&(
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={()=>setEditModal(false)}>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md shadow-2xl" onClick={e=>e.stopPropagation()}>
+            <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 text-sm">✏</div>
+                <h3 className="text-zinc-100 font-bold text-sm">Editar galeria</h3>
+              </div>
+              <button onClick={()=>setEditModal(false)} className="text-zinc-500 hover:text-zinc-300 text-xl w-7 h-7 flex items-center justify-center transition-colors">✕</button>
+            </div>
+            <div className="p-6 flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Título *</label>
+                <input value={editTitle} onChange={e=>setEditTitle(e.target.value)} placeholder="Título da galeria"
+                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500 transition-colors"/>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Data *</label>
+                  <input type="date" value={editDate} onChange={e=>setEditDate(e.target.value)}
+                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-orange-500 transition-colors"/>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Descrição</label>
+                  <input value={editDesc} onChange={e=>setEditDesc(e.target.value)} placeholder="Ex: Rodada 1"
+                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-orange-500 transition-colors"/>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-zinc-800 px-6 py-4 flex gap-3">
+              <button onClick={()=>setEditModal(false)} className="flex-1 py-2.5 border border-zinc-700 hover:border-zinc-500 text-zinc-400 font-mono text-sm rounded-xl transition-colors">Cancelar</button>
+              <button onClick={saveEdit} disabled={editSaving||!editTitle.trim()||!editDate}
+                className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-400 disabled:bg-zinc-700 disabled:text-zinc-500 text-black font-mono font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2">
+                {editSaving?<><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"/>Salvando...</>:"✓ Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
